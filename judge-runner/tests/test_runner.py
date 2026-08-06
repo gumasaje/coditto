@@ -22,6 +22,7 @@ from coditto_judge.runner import (  # noqa: E402
     execute,
     load_manifest,
     main,
+    parse_args,
     resolve_problem_dir,
     validate_candidate,
 )
@@ -169,6 +170,18 @@ class RunnerContractTest(unittest.TestCase):
             self.assertEqual(exit_code, 2)
             self.assertEqual(result["runStatus"], "SYSTEM_FAILED")
             self.assertEqual(result["error"]["kind"], "CONTENT_ERROR")
+
+    def test_accepts_api_generated_container_name(self) -> None:
+        args = parse_args(
+            [
+                "--candidate",
+                str(RUNNER_ROOT / "testdata/fixed"),
+                "--container-name",
+                "coditto-api-0123456789abcdef",
+            ]
+        )
+
+        self.assertEqual(args.container_name, "coditto-api-0123456789abcdef")
 
 
 if __name__ == "__main__":

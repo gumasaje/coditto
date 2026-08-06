@@ -300,6 +300,7 @@ def execute(
     candidate_dir: Path,
     timeout_seconds: int,
     output_limit_bytes: int,
+    container_name: str | None = None,
 ) -> tuple[dict[str, Any], int]:
     try:
         manifest = load_manifest(problem_dir)
@@ -309,7 +310,7 @@ def execute(
         print(str(exc), file=sys.stderr)
         return error_result(requested_problem, "SYSTEM_FAILED", "CONTENT_ERROR"), 2
 
-    container_name = f"coditto-judge-{uuid.uuid4().hex}"
+    container_name = container_name or f"coditto-judge-{uuid.uuid4().hex}"
     try:
         with tempfile.TemporaryDirectory(prefix="coditto-judge-") as temporary_dir:
             workspace = Path(temporary_dir) / "input"
@@ -363,6 +364,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--output-limit-bytes", type=int, default=DEFAULT_OUTPUT_LIMIT_BYTES)
+    parser.add_argument("--container-name")
     parser.set_defaults(repository_root=repository_root)
     return parser.parse_args(argv)
 
@@ -384,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
         args.candidate.absolute(),
         args.timeout_seconds,
         args.output_limit_bytes,
+        args.container_name,
     )
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
     return exit_code

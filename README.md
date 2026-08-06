@@ -15,7 +15,7 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 [Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재 Phase A의 공개 fixture와 Docker Runner는 구현·실검증됐습니다. Spring Backend 어댑터인 Phase B와 제출/결과 UI인 Phase C는 아직 구현되지 않았습니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 최소 Spring Backend 어댑터가 구현됐습니다. Phase C 제출/결과 UI는 아직 구현되지 않았습니다. Backend는 `POST /api/submissions`로 `source` 하나를 받아 별도 Python Runner 프로세스를 호출하고, 검증된 정규화 Judge JSON을 반환합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
 ## Phase A 검증
 

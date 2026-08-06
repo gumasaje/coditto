@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 구현 및 Docker 실검증 완료, Phase B·C 미구현
+**상태:** Phase A fixture·Runner 구현 및 Docker 실검증 완료, Phase B 최소 API 어댑터 구현, Phase C 미구현
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -15,12 +15,12 @@ Issue #1은 첫 구현 순서와 범위를 정하는 기준이며, 다음의 가
 → Frontend에 결과 표시
 ```
 
-Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재는 Phase A만 완료됐습니다.
+Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재는 Phase A와 최소 Phase B가 구현됐습니다.
 
 | 단계 | 범위 | 현재 상태 | 완료 증거 |
 | --- | --- | --- | --- |
 | A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `buggy`, `fixed`, `compile-error`, `regression-error`를 각각 3회 실행해 `TESTS_FAILED`, `TESTS_PASSED`, `COMPILE_FAILED`, 회귀 `TESTS_FAILED`를 결정론적으로 확인하고 매 실행 후 cleanup 검증 |
-| B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 미구현 | TODO: API가 모의 값이 아닌 실제 정규화된 Judge 결과 반환 |
+| B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 구현 | endpoint 통합 테스트가 별도 Python subprocess의 정규화 결과를 반환하고, malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
 | C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 미구현 | TODO: UI가 실제 API를 호출하고 세 execution outcome 표시 |
 
 PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 또는 개인화 문제는 Issue #1 범위 밖입니다.
@@ -30,11 +30,11 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 | 경로 | 책임 | 현재 상태 |
 | --- | --- | --- |
 | `frontend/` | Issue #1 제출/결과 화면, 이후 제품 UI | 미구현 |
-| `backend/` | Issue #1 Runner 어댑터, 이후 session과 persistence | 미구현 |
+| `backend/` | Issue #1 Runner 어댑터, 이후 session과 persistence | Phase B 최소 API 어댑터 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
 | `problems/` | 공개 demo fixture와 problem-package 계약 | Phase A 구현 완료 |
 
-각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 향후 Runner 프로세스를 호출하거나 작업을 전달하지만 제출 코드를 API 프로세스 안에서 실행하지 않습니다.
+각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 `POST /api/submissions`에서 최대 128 KiB raw JSON body의 `source` 하나를 받아 role-update-001 v1의 16 KiB decoded-source 계약을 먼저 검증한 뒤 허용 파일 경로에 임시로 기록하고, API가 생성한 container name과 함께 별도 `python3 judge-runner/run.py` subprocess를 호출합니다. raw transport 상한은 JSON escaping으로 인한 byte 확장을 수용하기 위해 source 계약보다 크며, source 자체의 16 KiB 상한을 완화하지 않습니다. API 프로세스는 제출 코드를 load 또는 실행하지 않으며 Runner diagnostics는 API response에 전달하지 않습니다. stdout가 정확히 한 줄의 계약 JSON이고 contract shape를 만족할 때만 이를 반환합니다. Runner 실행 실패·timeout·비계약 stdout은 `SYSTEM_FAILED`/`INFRA_ERROR`로 반환하며, terminal path마다 Python process tree와 해당 Judge container를 정리한 후 temporary candidate directory를 제거합니다. 배포 시 Runner script path는 절대 경로 configuration으로 지정해야 합니다.
 
 ## Phase A 구현 경계
 
@@ -73,7 +73,7 @@ Issue #1은 로컬 또는 신뢰하는 데모 입력으로 수행한 기술 검�
 ## 안정적인 책임 분리
 
 - Frontend는 향후 정규화된 공개 결과만 표시합니다.
-- Backend는 향후 request를 검증하고 Runner 프로세스 경계를 호출하며 build output을 verdict로 해석하지 않습니다.
+- Backend는 request를 단일 파일 임시 workspace로 변환하고 Runner 프로세스 경계를 호출하며 build output을 verdict로 해석하지 않습니다.
 - Runner는 [Judge 입출력 명세](contracts/judge.md)에 따라 입력 검증, container 실행, 결과 정규화, cleanup을 소유합니다.
 - problem package는 runtime과 허용 입력을 선언합니다. runtime-only demo file과 production private-pack file은 user workspace나 API result에 들어가지 않습니다.
 - deterministic execution만 Judge verdict를 결정하며 LLM output은 판정 근거가 아닙니다.
@@ -81,6 +81,5 @@ Issue #1은 로컬 또는 신뢰하는 데모 입력으로 수행한 기술 검�
 ## 남은 과제(TODO)
 
 - Judge image digest pinning과 재현 가능한 image publication 방식
-- Phase B의 최소 API DTO와 Runner process boundary
 - production private problem pack의 저장·배포 방식
 - 공개 임의 코드 실행 전에 필요한 더 강한 격리와 검증된 리소스 정책
