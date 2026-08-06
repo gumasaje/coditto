@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 구현 및 Docker 실검증 완료, Phase B 최소 API 어댑터 구현, Phase C 미구현
+**상태:** Phase A fixture·Runner 구현 및 Docker 실검증 완료, Phase B 최소 API 어댑터 구현, Phase C 제출/결과 UI 및 로컬 관통 검증 완료
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -21,7 +21,7 @@ Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재�
 | --- | --- | --- | --- |
 | A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `buggy`, `fixed`, `compile-error`, `regression-error`를 각각 3회 실행해 `TESTS_FAILED`, `TESTS_PASSED`, `COMPILE_FAILED`, 회귀 `TESTS_FAILED`를 결정론적으로 확인하고 매 실행 후 cleanup 검증 |
 | B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 구현 | endpoint 통합 테스트가 별도 Python subprocess의 정규화 결과를 반환하고, malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
-| C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 미구현 | TODO: UI가 실제 API를 호출하고 세 execution outcome 표시 |
+| C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 완료 | Vite proxy를 통한 실제 API 호출, `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED` 브라우저 표시 및 Frontend 테스트 |
 
 PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 또는 개인화 문제는 Issue #1 범위 밖입니다.
 

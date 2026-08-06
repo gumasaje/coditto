@@ -15,7 +15,37 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 [Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 최소 Spring Backend 어댑터가 구현됐습니다. Phase C 제출/결과 UI는 아직 구현되지 않았습니다. Backend는 `POST /api/submissions`로 `source` 하나를 받아 별도 Python Runner 프로세스를 호출하고, 검증된 정규화 Judge JSON을 반환합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 최소 Spring Backend 어댑터, Phase C의 Vite/React 제출 화면이 구현됐습니다. Backend는 `POST /api/submissions`로 `source` 하나를 받아 별도 Python Runner 프로세스를 호출하고, 검증된 정규화 Judge JSON을 반환합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+
+## Phase C 로컬 실행
+
+Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.6.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
+
+```bash
+# Backend 테스트와 실행
+cd backend
+./gradlew test
+./gradlew bootRun
+
+# 별도 터미널: Frontend 설치, 테스트, production build, 개발 서버
+cd frontend
+npm install
+npm test
+npm run build
+npm run dev
+```
+
+Frontend는 `http://localhost:5173`에서 열고 `/api` 상대 경로로 Backend `http://localhost:8080`에 요청합니다. Vite proxy 설정은 `frontend/vite.config.ts`에 있습니다. Backend를 먼저 실행한 뒤 Frontend 화면의 textarea에 `RoleService.java` 전체를 붙여 넣고 제출합니다.
+
+샘플 제출 파일은 다음과 같습니다.
+
+```text
+judge-runner/testdata/fixed/src/main/java/com/coditto/demo/RoleService.java         → TESTS_PASSED
+judge-runner/testdata/buggy/src/main/java/com/coditto/demo/RoleService.java         → TESTS_FAILED
+judge-runner/testdata/compile-error/src/main/java/com/coditto/demo/RoleService.java  → COMPILE_FAILED
+```
+
+Phase C 실제 상태: 세 샘플을 브라우저에서 제출해 화면과 Backend 응답에서 위 세 `execution` 값을 확인했습니다. Frontend 테스트 8개, Backend 테스트 11개, Runner 테스트 14개, Frontend production build도 통과했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
 
 ## Phase A 검증
 
