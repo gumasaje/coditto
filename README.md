@@ -13,9 +13,23 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 ## 첫 실행 가능한 핵심 흐름
 
-[Issue #1](https://github.com/gumasaje/coditto/issues/1)은 Java 21/Gradle/JUnit 공개 demo fixture를 제출하고 실제 Docker Judge 결과를 표시하는 가장 작은 전체 실행 경로를 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
+[Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재는 Phase A의 fixture·Runner, Phase B의 Spring Backend 어댑터, Phase C의 제출/결과 UI가 모두 구현 예정이며 미검증 상태입니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 원칙은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner는 구현·실검증됐습니다. Spring Backend 어댑터인 Phase B와 제출/결과 UI인 Phase C는 아직 구현되지 않았습니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+
+## Phase A 검증
+
+Docker Desktop을 실행하고 `docker version`에서 Client와 Server가 모두 보이는 환경에서 다음을 실행합니다.
+
+```bash
+# Runner 단위 테스트
+python3 -m unittest discover -s judge-runner/tests -v
+
+# Judge 이미지 빌드와 4개 candidate × 3회 Docker 실검증
+python3 judge-runner/verify_spike.py
+```
+
+전체 검증은 `--network none`, offline Gradle, 정규화된 JSON의 반복 일치와 container cleanup도 함께 확인합니다.
 
 ## 향후 방향
 
