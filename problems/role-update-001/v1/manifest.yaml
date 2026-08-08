@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "role-update-001",
+    "version": 1
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/coditto/demo/RoleService.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

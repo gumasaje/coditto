@@ -1,0 +1,18 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #edf2f7; background: #111827; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+main { width: min(760px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0; }
+header { margin-bottom: 32px; }
+.eyebrow { color: #8b9cff; font-size: 12px; font-weight: 700; letter-spacing: .14em; }
+h1 { max-width: 600px; margin: 12px 0; font-size: clamp(30px, 6vw, 54px); line-height: 1.08; }
+.intro { color: #a9b4c6; }
+form, .result { padding: 24px; border: 1px solid #2b3850; border-radius: 16px; background: #182235; }
+label { display: block; margin-bottom: 10px; font-weight: 700; }
+textarea { display: block; width: 100%; min-height: 360px; padding: 16px; resize: vertical; border: 1px solid #40516f; border-radius: 10px; color: #e5e7eb; background: #0d1422; font: 14px/1.6 ui-monospace, SFMono-Regular, monospace; }
+button { margin-top: 16px; padding: 12px 20px; border: 0; border-radius: 9px; color: #101827; background: #9caeff; font-weight: 800; cursor: pointer; }
+button:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
+.result { margin-top: 24px; }
+.result h2 { margin: 8px 0; font-size: 28px; }
+.execution { color: #9caeff; font: 700 20px ui-monospace, monospace; }
+.error, .error-kind { color: #ff9e9e; }
+.meta { color: #9aa9bf; font-size: 13px; }

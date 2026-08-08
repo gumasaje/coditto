@@ -1,0 +1,7 @@
+coditto:
+  runner:
+    python-command: python3
+    # Resolve this path from the backend process working directory. Production
+    # deployment must set an absolute path instead of relying on this default.
+    script-path: ../judge-runner/run.py
+    timeout: 75s

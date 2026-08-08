@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.coditto.demo'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.11.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets {
+    test {
+        java.srcDirs = [
+            '/judge-tests/target-tests/src/test/java',
+            '/judge-tests/regression-tests/src/test/java'
+        ]
+    }
+}
