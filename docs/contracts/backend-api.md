@@ -256,6 +256,8 @@ raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. 구현 완�
 
 이 payload는 현재 공통 filter가 `JudgeResponseFactory.rejectedSubmission()`을 사용해 만드는 기존 transport-limit 계약이다. 면접 질문 controller/service는 이를 다시 감싸거나 provider 오류로 바꾸지 않는다. 다른 요청 검증 오류는 위 표의 면접 질문 오류 body를 사용한다.
 
+현재 전역 `SubmissionExceptionHandler`는 모든 `HttpMessageNotReadableException`을 위 Judge rejection payload로 변환한다. 면접 질문 구현에서는 이 handler를 `/api/submissions` 의미로 한정하거나 interview-questions 전용 handler를 우선 적용해야 한다. 그 결과 malformed JSON과 DTO 역직렬화 실패는 표에 정의한 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`가 되어야 한다. 단, raw body 128 KiB 초과는 handler에 도달하기 전 공통 filter가 처리하므로 기존 Judge-shaped `REJECTED` payload를 그대로 유지하며 이 두 경로를 혼동하지 않는다. 구체적인 Spring handler 구현 코드는 이 계약의 범위 밖이다.
+
 #### 프롬프트 입력 경계
 
 프롬프트 구성 함수는 다음 세 값만 매개변수로 받는다: 게시된 해당 version의 공개 `statement.md` 원문, 검증된 요청 `source`, 검증된 요청 `outcome`. 함수에는 problem package directory, `judge-only/` directory, Runner stdout/stderr, Judge 결과 JSON, API 오류 객체, reference 또는 테스트 파일 목록을 넘기지 않는다. 따라서 함수는 다음 자산을 직접 또는 간접으로 읽을 수 없다.
@@ -344,6 +346,7 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
 - 같은 클래스의 `CANDIDATE_FILE` 상수가 `src/main/java/com/coditto/demo/RoleService.java`를 하드코딩합니다. manifest의 `candidate.allowedPaths[0]`에서 와야 합니다.
 - `isNormalizedContract`는 `check`에 `id`와 `execution` 외의 필드가 있으면 응답 전체를 거부합니다. `suites`를 추가하려면 이 허용 목록을 함께 열어야 하며, Runner와 API를 같은 변경에서 바꾸지 않으면 모든 제출이 `SYSTEM_FAILED`가 됩니다.
 - `SubmissionBodyLimitFilter.shouldNotFilter`가 `/api/submissions` 경로에만 본문 상한을 적용합니다. `POST /api/interview-questions`도 `source`를 받으므로 같은 상한 대상에 포함해야 합니다.
+- 전역 `SubmissionExceptionHandler`가 모든 `HttpMessageNotReadableException`을 Judge rejection payload로 변환합니다. malformed JSON·DTO 역직렬화 실패를 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`로 반환하려면 handler를 `/api/submissions`에 한정하거나 interview-questions 전용 handler를 우선 적용해야 합니다. raw body 128 KiB 초과는 이 변경 대상이 아니라 공통 filter의 기존 Judge-shaped `REJECTED` payload를 유지합니다.
 
 ## TODO
 
