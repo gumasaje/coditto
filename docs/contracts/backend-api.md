@@ -217,18 +217,19 @@ Runner 쪽 최소 구현 방향으로는 JUnit XML(`build/test-results/test/*.xm
 
 분리하는 이유는 `AGENTS.md`의 불변식입니다. LLM output은 판정 근거가 아니며 deterministic execution만 Judge verdict를 결정합니다. 생성을 제출 응답 경로에 넣으면 LLM 지연·오류·rate limit이 판정 응답을 지연시키거나 실패시킬 수 있습니다. 분리하면 Judge 판정은 이 기능이 완전히 죽어 있어도 정확히 지금과 같은 경로로 반환됩니다. Judge 판정 파이프라인은 변경하지 않습니다.
 
+Frontend는 방금 받은 Judge 결과가 `runStatus: "COMPLETED"`이고 `check.execution: "TESTS_PASSED"`일 때만 이 endpoint를 별도로 호출한다. `TESTS_FAILED`, `COMPILE_FAILED`, `TIMED_OUT`, `RESOURCE_LIMITED` 및 `REJECTED`·`SYSTEM_FAILED`에는 호출하지 않고 Judge 결과만 표시한다. 이 호출 조건은 현재 Frontend의 UX 제한일 뿐 API가 제출 이력이나 Judge 결과를 조회·검증하는 것은 아니다. DB와 `submissionId`가 생기는 후속 phase에서만 서버가 통과 여부를 검증하도록 강화한다.
+
 요청:
 
 ```json
 {
   "problemId": "role-update-001",
   "version": 1,
-  "outcome": "TESTS_PASSED",
   "source": "package com.coditto.demo;\n…"
 }
 ```
 
-`outcome`은 방금 받은 `check.execution` 값입니다. 클라이언트가 보낸 값이며 서버는 이를 판정으로 신뢰하지 않고 질문 톤을 고르는 힌트로만 씁니다. 이 endpoint는 Runner를 호출하거나 이전 제출 결과를 조회하지 않으며, `outcome`이 실제 Judge 결과와 일치하는지 검증하지 않습니다.
+이 endpoint는 Runner를 호출하거나 이전 제출 결과를 조회하지 않으며, 요청자가 통과한 제출을 보냈는지 검증하지 않는다.
 
 #### 요청 검증과 HTTP 오류
 
@@ -236,11 +237,10 @@ Runner 쪽 최소 구현 방향으로는 JUnit XML(`build/test-results/test/*.xm
 
 | 항목 | 계약 | 실패 응답 |
 | --- | --- | --- |
-| JSON 객체 | body는 JSON object여야 하며 `problemId`, 선택 `version`, `outcome`, `source` 외의 키를 포함하지 않는다. malformed JSON, 배열·scalar body, 필수 필드의 누락 또는 `null` 값은 유효하지 않다. | `400` + `{"error":{"kind":"INVALID_INTERVIEW_QUESTION_REQUEST"}}` |
+| JSON 객체 | body는 JSON object여야 하며 `problemId`, 선택 `version`, `source` 외의 키를 포함하지 않는다. malformed JSON, 배열·scalar body, 필수 필드의 누락 또는 `null` 값은 유효하지 않다. | `400` + `{"error":{"kind":"INVALID_INTERVIEW_QUESTION_REQUEST"}}` |
 | `problemId` | 필수 non-empty lowercase slug이며 `[a-z0-9]+(?:-[a-z0-9]+)*`를 만족한다. | `400` + `INVALID_INTERVIEW_QUESTION_REQUEST` |
 | `version` | 선택 positive integer다. 생략하면 API가 해당 문제의 최신 게시 version으로 확정한다. `null`, 0, 음수, 소수, 문자열은 유효하지 않다. | `400` + `INVALID_INTERVIEW_QUESTION_REQUEST` |
 | 문제 식별 | 확정된 `(problemId, version)`은 게시되어 있고 API의 manifest 인덱스에서 유효해야 한다. | `404` + `{"error":{"kind":"PROBLEM_NOT_FOUND"}}`; 패키지를 읽는 중 선언 계약 위반을 발견하면 `500` + `{"error":{"kind":"CONTENT_ERROR"}}` |
-| `outcome` | 필수 문자열이며 `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`, `TIMED_OUT`, `RESOURCE_LIMITED` 중 하나다. | `400` + `INVALID_INTERVIEW_QUESTION_REQUEST` |
 | `source` | 필수 문자열이며 UTF-8 byte length가 16 KiB 이하이다. 빈 문자열은 문법상 허용하되, 질문 품질을 보장하지 않으므로 유효한 요청 뒤 `UNAVAILABLE`이 될 수 있다. | `400` + `INVALID_INTERVIEW_QUESTION_REQUEST` |
 
 raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. 구현 완료 시 `SubmissionBodyLimitFilter.shouldNotFilter`의 적용 대상은 `POST /api/submissions`와 `POST /api/interview-questions` 두 경로다. `Content-Length`가 상한을 넘거나 streaming body가 읽는 중 상한을 넘으면 filter가 역직렬화 전에 거부한다. 기존 filter 계약과 동일하게 이 경우의 HTTP status는 `400`이고 body는 아래 Judge rejection payload다. 이는 면접 질문 DTO 검증 응답도, `UNAVAILABLE`도 아니다.
@@ -260,13 +260,15 @@ raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. 구현 완�
 
 #### 프롬프트 입력 경계
 
-프롬프트 구성 함수는 다음 세 값만 매개변수로 받는다: 게시된 해당 version의 공개 `statement.md` 원문, 검증된 요청 `source`, 검증된 요청 `outcome`. 함수에는 problem package directory, `judge-only/` directory, Runner stdout/stderr, Judge 결과 JSON, API 오류 객체, reference 또는 테스트 파일 목록을 넘기지 않는다. 따라서 함수는 다음 자산을 직접 또는 간접으로 읽을 수 없다.
+Backend는 problem index에 로드한 manifest의 `candidate.allowedPaths[0]`로 공개 base 파일을 찾고, 그 content와 검증된 요청 `source`를 비교해 diff를 계산한다. diff는 unified diff이며 header는 정확히 `--- a/{allowedPath}`와 `+++ b/{allowedPath}`를 쓰고, 각 hunk는 변경 전후 문맥을 각각 3줄씩 포함한다. 이 계산에만 base content와 전체 source를 사용한다.
+
+프롬프트 구성 함수의 유일한 매개변수는 게시된 해당 version의 공개 `statement.md` 원문과 계산된 diff다. 함수에는 전체 `source`, base content, problem package directory, `judge-only/` directory, Runner stdout/stderr, Judge 결과 JSON·진단, API 오류 객체, reference 또는 테스트 파일 목록을 넘기지 않는다. 따라서 함수는 다음 자산을 직접 또는 간접으로 읽을 수 없다.
 
 - `judge-only/target-tests/**`
 - `judge-only/regression-tests/**`
 - `judge-only/reference.patch`
 
-provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다. 다만 어떤 provider 구현도 위 세 허용 입력 밖의 파일 또는 오류 내용을 provider request에 추가해서는 안 된다.
+provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다. 다만 어떤 provider 구현도 `statement.md`와 계산된 diff 밖의 파일 또는 오류 내용을 provider request에 추가해서는 안 된다.
 
 응답 `200`:
 
@@ -277,6 +279,14 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
     {
       "question": "역할 필드가 생략된 경우와 빈 목록으로 전달된 경우를 왜 다르게 처리해야 합니까?",
       "rationale": "제출 코드가 두 경우를 구분하지 않고 같은 분기로 처리합니다."
+    },
+    {
+      "question": "기존 관리자 권한을 보존하려면 상태를 갱신하기 전에 무엇을 확인해야 합니까?",
+      "rationale": "diff가 기존 컬렉션을 새 요청 값으로 바로 대체하는 변경을 보여 줍니다."
+    },
+    {
+      "question": "이 변경이 null 입력에도 안전한 이유를 코드 흐름으로 설명해 보세요.",
+      "rationale": "diff에 추가된 조건 분기가 null 경로를 명시적으로 처리합니다."
     }
   ]
 }
@@ -284,11 +294,11 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
 
 `GENERATED`는 provider 응답을 파싱한 결과가 아래 계약을 모두 만족할 때만 사용한다.
 
-- `questions`는 1개 이상 3개 이하의 배열이다.
+- `questions`는 정확히 3개의 배열이다.
 - 각 원소는 `question`, `rationale`만 가진 object이고 두 값 모두 non-blank string이다.
-- 중복 질문은 허용하지 않는다.
+- 세 질문 object는 중복되지 않으며, 특히 `question` 문자열은 서로 달라야 한다.
 
-빈 배열, 3개 초과, 누락·추가 필드, object가 아닌 원소, non-string 또는 blank 값, JSON/structured-output 파싱 불가 결과는 생성 성공으로 간주하지 않는다.
+빈 배열, 1개 또는 2개, 4개 이상, 중복, 누락·추가 필드, object가 아닌 원소, non-string 또는 blank 값, JSON/structured-output 파싱 불가 결과는 생성 성공으로 간주하지 않는다. 이 provider output 형식 위반은 `INVALID_PROVIDER_OUTPUT`으로 정규화한다.
 
 유효한 요청 뒤 생성할 수 없는 경우는 모두 HTTP `200`과 정확히 같은 고정 body로 정규화한다.
 
@@ -298,14 +308,15 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
 
 | 유효한 요청 이후 실패 경로 | 외부 응답 | 허용되는 내부 기록 |
 | --- | --- | --- |
+| 계산된 diff가 비어 있음 | provider를 호출하지 않고 `200` + 고정 `UNAVAILABLE` body | `EMPTY_DIFF` 분류와 안전한 운영 메타데이터 |
 | 호출이 8초 안에 끝나지 않음 | `200` + 고정 `UNAVAILABLE` body | `TIMEOUT` 분류와 시간·provider 식별자 같은 운영 메타데이터 |
 | provider transport/auth/rate-limit/5xx 등 상위 호출 오류 | `200` + 고정 `UNAVAILABLE` body | 정규화된 `PROVIDER_ERROR` 분류와 안전한 운영 메타데이터 |
 | provider 응답의 JSON/structured output 파싱 실패 또는 위 질문 배열 계약 불일치 | `200` + 고정 `UNAVAILABLE` body | `INVALID_PROVIDER_OUTPUT` 분류와 안전한 운영 메타데이터 |
 | API key 또는 provider 설정이 없음 | `200` + 고정 `UNAVAILABLE` body | `NOT_CONFIGURED` 분류와 안전한 운영 메타데이터 |
 
-`status`는 `GENERATED` 또는 `UNAVAILABLE`이다. provider의 원본 오류 body·상태 코드·API key·authorization header와 기타 비밀은 HTTP 응답에 절대 넣지 않는다. 로그도 비밀이나 provider 원문 body를 기록하지 않으며, 위의 정규화 실패 분류와 요청 시간·trace identifier처럼 비밀이 아닌 운영 메타데이터만 기록할 수 있다. Frontend는 `UNAVAILABLE`이면 카드 영역만 접고 판정 결과 표시는 그대로 유지한다. 이 endpoint는 submission controller, Judge Runner, Judge response의 성공·실패 경로를 호출하거나 변경하지 않으므로, 생성 기능이 완전히 실패해도 판정 결과 화면을 깨뜨릴 수 없다.
+계산된 diff가 비었을 때의 `UNAVAILABLE`은 정상 통과 UX에서는 예상하지 않는 직접 호출 방어 규칙이다. `status`는 `GENERATED` 또는 `UNAVAILABLE`이다. provider의 원본 오류 body·상태 코드·API key·authorization header와 기타 비밀은 HTTP 응답에 절대 넣지 않는다. 로그도 비밀이나 provider 원문 body를 기록하지 않으며, 위의 정규화 실패 분류와 요청 시간·trace identifier처럼 비밀이 아닌 운영 메타데이터만 기록할 수 있다. Frontend는 `UNAVAILABLE`이면 카드 영역만 접고 판정 결과 표시는 그대로 유지한다. 이 endpoint는 submission controller, Judge Runner, Judge response의 성공·실패 경로를 호출하거나 변경하지 않으므로, 생성 기능이 완전히 실패해도 판정 결과 화면을 깨뜨릴 수 없다.
 
-질문은 최대 3개, LLM 호출 타임아웃은 8초로 둡니다. 캐시하지 않습니다. 인증이 범위 밖이라 호출자를 식별할 수 없으므로 rate limit과 비용 상한은 TODO입니다.
+질문은 정확히 3개, LLM 호출 타임아웃은 8초로 둡니다. 캐시하지 않습니다. 인증이 범위 밖이라 호출자를 식별할 수 없으므로 rate limit과 비용 상한은 TODO입니다.
 
 ## 판단: 작업공간의 "테스트 실행" 버튼
 
