@@ -49,6 +49,48 @@ class SubmissionControllerIntegrationTest {
     }
 
     @Test
+    void returns_suite_results_without_recalculating_execution() throws Exception {
+        mockMvc.perform(post("/api/submissions")
+                        .contentType("application/json")
+                        .content("{\"source\":\"suites\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.runStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.check.execution").value("TESTS_PASSED"))
+                .andExpect(jsonPath("$.check.suites.target").value("TESTS_FAILED"))
+                .andExpect(jsonPath("$.check.suites.regression").value("TESTS_PASSED"));
+    }
+
+    @Test
+    void accepts_an_execution_only_compile_failure() throws Exception {
+        mockMvc.perform(post("/api/submissions")
+                        .contentType("application/json")
+                        .content("{\"source\":\"compile-failed\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.runStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.check.execution").value("COMPILE_FAILED"))
+                .andExpect(jsonPath("$.check.suites").doesNotExist());
+    }
+
+    @Test
+    void rejects_invalid_suite_results() throws Exception {
+        for (String source : new String[] {
+                "invalid-suites-target-value",
+                "invalid-suites-regression-value",
+                "invalid-suites-missing-target",
+                "invalid-suites-non-textual-regression",
+                "invalid-suites-extra-field",
+                "invalid-suites-non-object"
+        }) {
+            mockMvc.perform(post("/api/submissions")
+                            .contentType("application/json")
+                            .content("{\"source\":\"" + source + "\"}"))
+                    .andExpect(status().isBadGateway())
+                    .andExpect(jsonPath("$.runStatus").value("SYSTEM_FAILED"))
+                    .andExpect(jsonPath("$.error.kind").value("INFRA_ERROR"));
+        }
+    }
+
+    @Test
     void rejects_runner_stdout_that_is_not_exactly_one_contract_json_line() throws Exception {
         mockMvc.perform(post("/api/submissions")
                         .contentType("application/json")
