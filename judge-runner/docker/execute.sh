@@ -12,12 +12,4 @@ cp -R /opt/gradle-cache-seed/. "$gradle_home/"
 export GRADLE_USER_HOME="$gradle_home"
 cd "$project_dir" || exit 30
 
-echo "judge stage: compile" >&2
-if ! gradle --offline --no-daemon --console=plain --max-workers=1 compileJava compileTestJava; then
-    exit 20
-fi
-
-echo "judge stage: test" >&2
-if ! gradle --offline --no-daemon --console=plain --max-workers=1 test; then
-    exit 21
-fi
+exec python3 -B /usr/local/lib/coditto-judge/judge_entrypoint.py

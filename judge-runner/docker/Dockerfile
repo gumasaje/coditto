@@ -13,7 +13,9 @@ FROM gradle:8.10.2-jdk21
 USER root
 COPY --from=dependency-cache --chown=gradle:gradle /home/gradle/.gradle /opt/gradle-cache-seed
 COPY judge-runner/docker/execute.sh /usr/local/bin/coditto-judge-execute
-RUN chmod 0555 /usr/local/bin/coditto-judge-execute
+COPY judge-runner/docker/judge_entrypoint.py /usr/local/lib/coditto-judge/judge_entrypoint.py
+RUN chmod 0555 /usr/local/bin/coditto-judge-execute \
+    /usr/local/lib/coditto-judge/judge_entrypoint.py
 
 USER 1000:1000
 ENTRYPOINT ["/usr/local/bin/coditto-judge-execute"]
