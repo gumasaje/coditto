@@ -21,6 +21,9 @@ DEFAULT_PROBLEM_ID = "role-update-001"
 DEFAULT_VERSION = 1
 DEFAULT_TIMEOUT_SECONDS = 60
 DEFAULT_OUTPUT_LIMIT_BYTES = 1_048_576
+SUITE_SOURCE_MAP_FILENAME = ".coditto-suite-source-map.json"
+SUITE_NAMES = ("target", "regression")
+SUITE_RESULT_VALUES = {"TESTS_PASSED", "TESTS_FAILED"}
 PROBLEM_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 
 
@@ -155,10 +158,48 @@ def assemble_workspace(problem_dir: Path, candidate_dir: Path, destination: Path
         shutil.copy2(source, target)
 
 
-def assemble_judge_tests(problem_dir: Path, destination: Path) -> None:
+def preflight_suite_sources(problem_dir: Path) -> dict[str, list[str]]:
+    _assert_safe_problem_tree(problem_dir / "judge-only")
+    sources: dict[str, list[str]] = {}
+    relative_paths: dict[str, set[str]] = {}
+
+    for suite in SUITE_NAMES:
+        source_root = problem_dir / "judge-only" / f"{suite}-tests/src/test/java"
+        suite_paths: set[str] = set()
+        suite_fqns: set[str] = set()
+        if source_root.is_dir():
+            for source in sorted(source_root.rglob("*.java")):
+                if not source.is_file():
+                    continue
+                relative = source.relative_to(source_root)
+                relative_value = relative.as_posix()
+                suite_paths.add(relative_value)
+                suite_fqns.add(relative.with_suffix("").as_posix().replace("/", "."))
+
+        _require(suite_fqns, f"{suite} suite must contain at least one Java test source")
+        sources[suite] = sorted(suite_fqns)
+        relative_paths[suite] = suite_paths
+
+    duplicate_paths = relative_paths["target"] & relative_paths["regression"]
+    _require(not duplicate_paths, "target and regression suites contain duplicate source paths")
+    duplicate_fqns = set(sources["target"]) & set(sources["regression"])
+    _require(not duplicate_fqns, "target and regression suites contain duplicate source FQNs")
+    return sources
+
+
+def assemble_judge_tests(
+    problem_dir: Path,
+    destination: Path,
+    suite_sources: dict[str, list[str]],
+) -> None:
     _assert_safe_problem_tree(problem_dir / "judge-only")
     for name in ("target-tests", "regression-tests"):
         shutil.copytree(problem_dir / "judge-only" / name, destination / name)
+    source_map_path = destination / SUITE_SOURCE_MAP_FILENAME
+    source_map_path.write_text(
+        json.dumps(suite_sources, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
 
 
 def build_docker_command(
@@ -285,6 +326,21 @@ def completed_result(problem: dict[str, Any], execution: str) -> dict[str, Any]:
     }
 
 
+def completed_test_result(
+    problem: dict[str, Any], target: str, regression: str
+) -> dict[str, Any]:
+    if target not in SUITE_RESULT_VALUES or regression not in SUITE_RESULT_VALUES:
+        raise ValueError("invalid suite result")
+    execution = (
+        "TESTS_PASSED"
+        if target == "TESTS_PASSED" and regression == "TESTS_PASSED"
+        else "TESTS_FAILED"
+    )
+    result = completed_result(problem, execution)
+    result["check"]["suites"] = {"target": target, "regression": regression}
+    return result
+
+
 def error_result(problem: dict[str, Any], status: str, kind: str) -> dict[str, Any]:
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -292,6 +348,28 @@ def error_result(problem: dict[str, Any], status: str, kind: str) -> dict[str, A
         "runStatus": status,
         "error": {"kind": kind},
     }
+
+
+def result_for_container_exit(
+    problem: dict[str, Any], return_code: int | None
+) -> tuple[dict[str, Any], int]:
+    if return_code == 0:
+        return completed_test_result(problem, "TESTS_PASSED", "TESTS_PASSED"), 0
+    if return_code == 20:
+        return completed_result(problem, "COMPILE_FAILED"), 0
+    if return_code == 21:
+        return completed_test_result(problem, "TESTS_FAILED", "TESTS_PASSED"), 0
+    if return_code == 22:
+        return completed_test_result(problem, "TESTS_PASSED", "TESTS_FAILED"), 0
+    if return_code == 23:
+        return completed_test_result(problem, "TESTS_FAILED", "TESTS_FAILED"), 0
+    if return_code == 24:
+        return error_result(problem, "SYSTEM_FAILED", "CONTENT_ERROR"), 2
+    if return_code == 25:
+        return error_result(problem, "SYSTEM_FAILED", "INFRA_ERROR"), 2
+    if return_code in (26, 137):
+        return completed_result(problem, "RESOURCE_LIMITED"), 0
+    raise InfrastructureError(f"Judge container exited with status {return_code}")
 
 
 def execute(
@@ -316,8 +394,9 @@ def execute(
             workspace = Path(temporary_dir) / "input"
             judge_tests = Path(temporary_dir) / "judge-tests"
             workspace.mkdir()
+            suite_sources = preflight_suite_sources(problem_dir)
             assemble_workspace(problem_dir, candidate_dir, workspace)
-            assemble_judge_tests(problem_dir, judge_tests)
+            assemble_judge_tests(problem_dir, judge_tests, suite_sources)
             command = build_docker_command(
                 manifest["runtime"]["image"], workspace, judge_tests, container_name
             )
@@ -329,20 +408,13 @@ def execute(
                 output_limit_bytes,
             )
             if output:
-                print("container diagnostics:", file=sys.stderr)
-                print(output.decode("utf-8", errors="replace").rstrip(), file=sys.stderr)
+                print(f"container diagnostics captured: {len(output)} bytes", file=sys.stderr)
 
             if limit_reason == "timeout":
                 return completed_result(problem, "TIMED_OUT"), 0
             if limit_reason == "output" or return_code == 137:
                 return completed_result(problem, "RESOURCE_LIMITED"), 0
-            if return_code == 0:
-                return completed_result(problem, "TESTS_PASSED"), 0
-            if return_code == 20:
-                return completed_result(problem, "COMPILE_FAILED"), 0
-            if return_code == 21:
-                return completed_result(problem, "TESTS_FAILED"), 0
-            raise InfrastructureError(f"Judge container exited with status {return_code}")
+            return result_for_container_exit(problem, return_code)
     except SubmissionRejected as exc:
         print(str(exc), file=sys.stderr)
         return error_result(problem, "REJECTED", "INVALID_SUBMISSION"), 2

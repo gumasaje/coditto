@@ -45,7 +45,7 @@ judge-runner/testdata/buggy/src/main/java/com/coditto/demo/RoleService.java     
 judge-runner/testdata/compile-error/src/main/java/com/coditto/demo/RoleService.java  → COMPILE_FAILED
 ```
 
-Phase C 실제 상태: 세 샘플을 브라우저에서 제출해 화면과 Backend 응답에서 위 세 `execution` 값을 확인했습니다. Frontend 테스트 8개, Backend 테스트 14개, Runner 테스트 28개, Frontend production build도 통과했습니다. Runner의 target/regression `check.suites` 출력과 Backend의 suites 허용·값 검증은 각각 구현·테스트됐으며, 두 변경을 합친 브라우저 관통 검증은 아직 수행하지 않았습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
+Phase C 실제 상태: 세 샘플을 브라우저에서 제출해 화면과 Backend 응답에서 위 세 `execution` 값을 확인했습니다. Frontend 테스트 8개, Backend 테스트 14개, Runner 테스트 28개, Frontend production build도 통과했습니다. Runner의 target/regression `check.suites` 출력과 Backend의 suites 허용·값 검증을 실제 Docker Runner와 Backend를 연결해 관통 검증했으며, `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate 모두 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
 
 ## Phase A 검증
 
@@ -59,7 +59,7 @@ python3 -m unittest discover -s judge-runner/tests -v
 python3 judge-runner/verify_spike.py
 ```
 
-전체 검증은 `--network none`, offline Gradle, 정규화된 JSON의 반복 일치와 container cleanup도 함께 확인합니다.
+전체 검증은 `--network none`, offline Gradle, target/regression 구분, test 상세 비노출, 정규화된 JSON의 반복 일치와 container cleanup도 함께 확인합니다.
 
 ## 향후 방향
 

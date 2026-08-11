@@ -19,7 +19,7 @@ Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재�
 
 | 단계 | 범위 | 현재 상태 | 완료 증거 |
 | --- | --- | --- | --- |
-| A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `buggy`, `fixed`, `compile-error`, `regression-error`를 각각 3회 실행해 `TESTS_FAILED`, `TESTS_PASSED`, `COMPILE_FAILED`, 회귀 `TESTS_FAILED`를 결정론적으로 확인하고 매 실행 후 cleanup 검증 |
+| A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | 네 candidate를 각각 3회 실행해 `execution`과 target/regression suite 구분을 결정론적으로 확인하고 상세 비노출 및 매 실행 후 cleanup 검증 |
 | B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 구현 | endpoint 통합 테스트가 별도 Python subprocess의 정규화 결과를 반환하고, malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
 | C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 완료 | Vite proxy를 통한 실제 API 호출, `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED` 브라우저 표시 및 Frontend 테스트 |
 
@@ -44,9 +44,9 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 python3 judge-runner/run.py --candidate judge-runner/testdata/fixed
 ```
 
-Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 Docker·Gradle 진단은 stderr로 분리합니다. compile 단계와 test 단계를 별도 Gradle 실행과 exit code로 구분하며, 결과 형태는 [Judge 입출력 명세](contracts/judge.md)를 따릅니다.
+Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 정규화된 Docker·stage 진단은 stderr로 분리합니다. compile 단계와 test 단계를 별도 Gradle 실행과 exit code로 구분하며, 단일 test 실행의 JUnit XML을 immutable parser가 target/regression suite로 사후 배정합니다. 결과 형태는 [Judge 입출력 명세](contracts/judge.md)를 따릅니다.
 
-`judge-runner/verify_spike.py`는 Judge 이미지를 빌드한 뒤 네 candidate를 각각 3회 실행합니다. 기대한 `execution`, 정규화된 JSON의 반복 일치, 실제 `--network none`과 mount 경계, non-root 이미지, 남은 container가 없는지를 함께 검사합니다.
+`judge-runner/verify_spike.py`는 Judge 이미지를 빌드한 뒤 네 candidate를 각각 3회 실행합니다. 기대한 `execution`과 `suites`, 정규화된 JSON의 반복 일치, test 상세 비노출, 실제 `--network none`과 mount 경계, non-root 이미지, 남은 container가 없는지를 함께 검사합니다.
 
 ## 공개 데모와 프로덕션 자산 경계
 
@@ -67,6 +67,7 @@ Issue #1은 로컬 또는 신뢰하는 데모 입력으로 수행한 기술 검�
 - 측정해 적용한 제한은 CPU 1, memory 768 MiB, `memory-swap` 768 MiB, PID 128, `nofile` 1024, timeout 60초, captured output 1 MiB입니다. `memory-swap`은 memory를 포함한 총 상한이므로 추가 swap은 없습니다.
 - writable 영역은 `/tmp` 64 MiB와 `/workspace` 512 MiB의 tmpfs로 제한했습니다.
 - host cache를 mount하지 않은 조건에서 offline Gradle 실행을 확인했고, 모든 종료 경로에서 temporary directory와 Judge container cleanup을 검증했습니다.
+- raw Gradle output은 immutable entrypoint의 합산 1 MiB bounded sink에서 소비하고 host로 전달하지 않습니다. DTD와 entity를 거부하는 trusted parser가 JUnit XML을 읽고 예약 exit code로만 suite 판정을 전달합니다.
 
 이 값은 현재 Docker Desktop 환경의 Phase A 기술 검증에서 측정한 값입니다. 프로덕션 보안 기준이나 충분한 리소스 정책으로 간주하지 않습니다. 특히 Gradle compile 단계에서 발생한 일부 인프라 오류가 현재 `COMPILE_FAILED`로 분류될 수 있습니다.
 
