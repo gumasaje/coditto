@@ -207,9 +207,9 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
 - 집계는 단방향입니다. 둘 다 `TESTS_PASSED`면 `execution`은 `TESTS_PASSED`, 하나라도 `TESTS_FAILED`면 `execution`은 `TESTS_FAILED`입니다. 기존 `execution` 값의 의미가 바뀌지 않으므로 이 필드를 읽지 않는 클라이언트는 영향받지 않습니다.
 - 실패한 JUnit 메서드 이름은 응답에 포함하지 않습니다. 숨은 입력과 assertion을 드러내지 않으며, 메서드 이름 자체가 학습 정보를 거의 주지 않는다는 판단입니다.
 
-**이 필드는 Runner 변경이 선행돼야 합니다.** 현재 `base/build.gradle`은 target과 regression 테스트를 하나의 test sourceSet으로 합치고 `execute.sh`는 `gradle test`를 한 번 실행하므로, 어느 쪽이 실패했는지가 Runner 출력에 존재하지 않습니다. API 혼자서는 이 값을 만들 수 없고, 만들려 시도해서도 안 됩니다. Runner가 두 값을 내보내기 전까지 API는 `suites`를 생략하고, Frontend는 필드 부재를 "구분 정보 없음"으로 처리합니다.
+Runner는 단일 `gradle test` 실행의 JUnit XML을 사후 분리해 이 필드를 출력합니다. API 혼자서는 이 값을 만들거나 추론하지 않고 Runner 결과를 검증해 그대로 전달합니다. Backend의 `isNormalizedContract`는 `check.suites`를 허용하고 `target`과 `regression`이 각각 `TESTS_PASSED` 또는 `TESTS_FAILED`인지 검증합니다. suites 존재 조건과 `execution` 집계 일관성은 Runner가 보장하며 Backend가 다시 계산하거나 검증하지 않습니다.
 
-Runner 쪽 최소 구현 방향으로는 JUnit XML(`build/test-results/test/*.xml`)의 테스트 클래스를 두 소스 디렉터리 소속으로 매핑하는 방식이 Gradle 실행 횟수를 늘리지 않아 유리해 보입니다. 다만 이 선택과 `suites`의 최종 형태는 `judge.md` revision이 소유하며, 이 문서는 API가 소비할 형태만 제안합니다.
+Runner는 JUnit XML(`build/test-results/test/*.xml`)의 테스트 클래스를 두 소스 디렉터리 소속으로 매핑하며 Gradle test 실행 횟수를 늘리지 않습니다. 매핑·오류 분류와 `suites`의 최종 형태는 `judge.md`가 소유하고, 이 문서는 API가 소비할 형태만 정의합니다.
 
 ### POST /api/interview-questions
 
