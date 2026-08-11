@@ -187,12 +187,13 @@ public class JudgeRunnerClient {
             JsonNode check = value.path("check");
             return !value.has("error")
                     && hasOnlyFields(value, "schemaVersion", "problem", "runStatus", "check")
-                    && hasOnlyFields(check, "id", "execution")
+                    && hasOnlyFields(check, "id", "execution", "suites")
                     && check.path("id").isTextual()
                     && "official".equals(check.path("id").textValue())
                     && check.path("execution").isTextual()
                     && Set.of("TESTS_PASSED", "TESTS_FAILED", "COMPILE_FAILED", "TIMED_OUT", "RESOURCE_LIMITED")
-                            .contains(check.path("execution").textValue());
+                            .contains(check.path("execution").textValue())
+                    && hasValidSuitesIfPresent(check);
         }
         if ("REJECTED".equals(runStatus)) {
             return isOnlyErrorResult(value, Set.of("INVALID_SUBMISSION"));
@@ -207,6 +208,19 @@ public class JudgeRunnerClient {
                 && hasOnlyFields(error, "kind")
                 && error.path("kind").isTextual()
                 && allowedKinds.contains(error.path("kind").textValue());
+    }
+
+    private boolean hasValidSuitesIfPresent(JsonNode check) {
+        if (!check.has("suites")) {
+            return true;
+        }
+        JsonNode suites = check.path("suites");
+        Set<String> allowedResults = Set.of("TESTS_PASSED", "TESTS_FAILED");
+        return hasOnlyFields(suites, "target", "regression")
+                && suites.path("target").isTextual()
+                && allowedResults.contains(suites.path("target").textValue())
+                && suites.path("regression").isTextual()
+                && allowedResults.contains(suites.path("regression").textValue());
     }
 
     private boolean hasExpectedExitStatus(int exitCode, JsonNode result) {

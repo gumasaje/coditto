@@ -75,6 +75,51 @@ elif source == "wrong-types":
 elif source == "oversized-stdout":
     print("x" * (64 * 1024 + 1))
     raise SystemExit(0)
+elif source == "suites":
+    print(json.dumps({
+        "schemaVersion": "draft-v0",
+        "problem": {"id": "role-update-001", "version": 1},
+        "runStatus": "COMPLETED",
+        "check": {
+            "id": "official",
+            "execution": "TESTS_PASSED",
+            "suites": {"target": "TESTS_FAILED", "regression": "TESTS_PASSED"},
+        },
+    }, separators=(",", ":")))
+    raise SystemExit(0)
+elif source == "compile-failed":
+    print(json.dumps({
+        "schemaVersion": "draft-v0",
+        "problem": {"id": "role-update-001", "version": 1},
+        "runStatus": "COMPLETED",
+        "check": {"id": "official", "execution": "COMPILE_FAILED"},
+    }, separators=(",", ":")))
+    raise SystemExit(0)
+elif source.startswith("invalid-suites-"):
+    suites = {"target": "TESTS_PASSED", "regression": "TESTS_FAILED"}
+    if source == "invalid-suites-target-value":
+        suites["target"] = "TESTS_SKIPPED"
+    elif source == "invalid-suites-regression-value":
+        suites["regression"] = "TESTS_SKIPPED"
+    elif source == "invalid-suites-missing-target":
+        del suites["target"]
+    elif source == "invalid-suites-non-textual-regression":
+        suites["regression"] = True
+    elif source == "invalid-suites-extra-field":
+        suites["details"] = []
+    elif source == "invalid-suites-non-object":
+        suites = []
+    print(json.dumps({
+        "schemaVersion": "draft-v0",
+        "problem": {"id": "role-update-001", "version": 1},
+        "runStatus": "COMPLETED",
+        "check": {
+            "id": "official",
+            "execution": "TESTS_FAILED",
+            "suites": suites,
+        },
+    }, separators=(",", ":")))
+    raise SystemExit(0)
 
 execution = "TESTS_PASSED" if "return requestedRole" in source else "TESTS_FAILED"
 print(json.dumps({
