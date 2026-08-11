@@ -16,12 +16,32 @@ RUNNER = REPOSITORY_ROOT / "judge-runner/run.py"
 DOCKERFILE = REPOSITORY_ROOT / "judge-runner/docker/Dockerfile"
 IMAGE = "coditto/judge-java21-gradle:8.10.2-phase-a"
 EXPECTED = {
-    "buggy": "TESTS_FAILED",
-    "fixed": "TESTS_PASSED",
-    "compile-error": "COMPILE_FAILED",
-    "regression-error": "TESTS_FAILED",
+    "buggy": {
+        "execution": "TESTS_FAILED",
+        "suites": {"target": "TESTS_FAILED", "regression": "TESTS_PASSED"},
+    },
+    "fixed": {
+        "execution": "TESTS_PASSED",
+        "suites": {"target": "TESTS_PASSED", "regression": "TESTS_PASSED"},
+    },
+    "compile-error": {"execution": "COMPILE_FAILED"},
+    "regression-error": {
+        "execution": "TESTS_FAILED",
+        "suites": {"target": "TESTS_PASSED", "regression": "TESTS_FAILED"},
+    },
 }
 VARIABLE_KEYS = {"durationMs", "startedAt", "completedAt"}
+FORBIDDEN_OUTPUT = (
+    "RoleServiceTargetTest",
+    "RoleServiceRegressionTest",
+    "appliesTheRequestedRoleWhenTheChangeIsApproved",
+    "preservesTheCurrentRoleWhenTheChangeIsRejected",
+    "AssertionFailedError",
+    "expected: <",
+    "<failure",
+    "<error",
+    "stack trace",
+)
 
 
 def run(command: list[str], *, timeout: int | None = None) -> subprocess.CompletedProcess[str]:
@@ -52,12 +72,12 @@ def normalize(value: Any) -> Any:
     return value
 
 
-def expected_json(execution: str) -> dict[str, Any]:
+def expected_json(check: dict[str, Any]) -> dict[str, Any]:
     return {
         "schemaVersion": "draft-v0",
         "problem": {"id": "role-update-001", "version": 1},
         "runStatus": "COMPLETED",
-        "check": {"id": "official", "execution": execution},
+        "check": {"id": "official", **check},
     }
 
 
@@ -117,7 +137,7 @@ def main() -> int:
     assert_runtime_version(runtime.stdout)
 
     case_summaries: list[dict[str, Any]] = []
-    for case, execution in EXPECTED.items():
+    for case, expected_check in EXPECTED.items():
         normalized_results: list[Any] = []
         durations: list[float] = []
         for iteration in range(1, 4):
@@ -134,23 +154,17 @@ def main() -> int:
             if len(output_lines) != 1:
                 raise RuntimeError(f"{case} run {iteration} did not emit exactly one JSON line")
             parsed = json.loads(output_lines[0])
-            if parsed != expected_json(execution):
+            if parsed != expected_json(expected_check):
                 raise RuntimeError(
-                    f"{case} run {iteration} returned {parsed!r}, expected {expected_json(execution)!r}"
+                    f"{case} run {iteration} returned {parsed!r}, "
+                    f"expected {expected_json(expected_check)!r}"
                 )
             assert_isolated_command(result.stderr, case, iteration)
-            if case == "regression-error":
-                regression_failure = (
-                    "RoleServiceRegressionTest > "
-                    "preservesTheCurrentRoleWhenTheChangeIsRejected() FAILED"
-                )
-                target_failure = (
-                    "RoleServiceTargetTest > "
-                    "appliesTheRequestedRoleWhenTheChangeIsApproved() FAILED"
-                )
-                if regression_failure not in result.stderr or target_failure in result.stderr:
+            public_and_diagnostics = result.stdout + result.stderr
+            for forbidden in FORBIDDEN_OUTPUT:
+                if forbidden in public_and_diagnostics:
                     raise RuntimeError(
-                        f"{case} run {iteration} did not isolate the regression-test failure"
+                        f"{case} run {iteration} exposed forbidden test detail: {forbidden!r}"
                     )
             normalized_results.append(normalize(parsed))
 
@@ -159,7 +173,8 @@ def main() -> int:
         case_summaries.append(
             {
                 "case": case,
-                "execution": execution,
+                "execution": expected_check["execution"],
+                "suites": expected_check.get("suites"),
                 "runs": 3,
                 "seconds": [round(duration, 3) for duration in durations],
                 "normalizedJsonStable": True,

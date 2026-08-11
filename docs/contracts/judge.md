@@ -1,6 +1,6 @@
 # Judge 입출력 명세: Runner와 격리
 
-**상태:** Draft v0 — 기존 Phase A `execution` 계약은 Runner에서 구현하고 Docker로 실검증함. 이 문서의 `check.suites` revision은 계약만 확정했으며 Runner 구현과 Docker 실검증 전임
+**상태:** Draft v0 — Phase A `execution`과 `check.suites` 계약을 Runner에서 구현하고 Docker로 실검증함
 
 이 문서는 Runner의 하위 계약을 정의합니다. Runner에서 API와 UI로 이어지는 Issue #1 순서는 [기술 아키텍처](../ARCHITECTURE.md)가 소유합니다.
 
@@ -130,7 +130,7 @@ Runner는 candidate container를 시작하기 전에 다음 순서로 source map
 1. trusted parser는 모든 XML이 존재하고 읽을 수 있으며 well-formed인지 먼저 검증합니다. candidate code 실행 뒤의 산출물은 신뢰하지 않으므로 DTD와 external entity는 허용하지 않습니다. XML file set이 비었거나 file을 읽을 수 없거나 XML이 well-formed가 아니거나 `<testcase>`에 필수 `classname` attribute가 없으면 `SYSTEM_FAILED` / `INFRA_ERROR`로 종료합니다.
 2. 각 `<testcase classname>`에서 중첩 class 표기인 `$`와 그 뒤 문자열을 제거해 최상위 test class FQN을 구합니다. 예를 들어 `com.example.RoleTest$Nested`는 `com.example.RoleTest`로 정규화합니다.
 3. 정규화한 FQN을 preflight source map에서 찾습니다. target 또는 regression 중 정확히 한 곳에서 찾은 경우에만 해당 testcase를 그 suite에 배정합니다. source map에 없는 FQN이면 official test의 package·source path와 실행 class가 맞지 않는 problem package fault이므로 `SYSTEM_FAILED` / `CONTENT_ERROR`로 종료합니다.
-4. `<failure>`, `<error>`, `<skipped>` child 중 하나라도 있는 testcase는 소속 suite를 `TESTS_FAILED`로 만듭니다. `<skipped>`도 XML에서 관찰한 testcase 수에는 포함하지만 실행 근거를 통과로 만들 수 없으므로 실패로 집계합니다.
+4. `<failure>`, `<error>`, `<skipped>` child 중 하나라도 있는 testcase는 소속 suite를 `TESTS_FAILED`로 만듭니다. `<skipped>` testcase는 관찰 건수에 포함하고 해당 suite를 `TESTS_FAILED`로 판정하며, `SYSTEM_FAILED` / `CONTENT_ERROR`로 재분류하지 않습니다.
 5. XML 전체를 매핑한 뒤 target 또는 regression에 관찰된 testcase가 0개이면 preflight를 통과한 test source가 실행 산출물에 나타나지 않은 것이므로 `SYSTEM_FAILED` / `INFRA_ERROR`로 종료합니다.
 6. 각 suite에 관찰 testcase가 한 개 이상 있고, 그 suite의 모든 testcase에 failure, error, skipped가 없을 때만 그 suite를 `TESTS_PASSED`로 판정합니다. 두 suite 값을 모두 확정한 뒤에만 위 집계 표로 `check.execution`을 만듭니다.
 
@@ -152,11 +152,11 @@ trusted parser는 Judge image의 immutable entrypoint에 포함되며 candidate 
 | `26` | `COMPLETED`; execution `RESOURCE_LIMITED`; `suites` 없음 |
 | `137` | `COMPLETED`; execution `RESOURCE_LIMITED`; `suites` 없음 |
 
-실행 전 preflight의 `CONTENT_ERROR`는 container를 시작하지 않고 같은 top-level 결과를 반환하며, exit code `24`는 test 이후 XML classname과 prevalidated source map의 불일치를 전달합니다. exit code `25`는 XML 산출물 또는 parser 일관성 오류, `26`은 container 내부에서 기존 1 MiB output limit을 감시하다 초과한 경우에 사용합니다. host가 직접 감지한 timeout은 `TIMED_OUT`, host output limit 초과는 `RESOURCE_LIMITED`로 정규화하므로 별도 container exit code가 필요하지 않습니다. 그 밖의 예약되지 않은 exit code는 `SYSTEM_FAILED` / `INFRA_ERROR`입니다.
+실행 전 preflight의 `CONTENT_ERROR`는 container를 시작하지 않고 같은 top-level 결과를 반환하며, exit code `24`는 test 이후 XML classname과 prevalidated source map의 불일치 또는 parser가 재검출한 source-map 중복을 전달합니다. exit code `25`는 XML 산출물 또는 parser 일관성 오류, `26`은 container 내부에서 기존 1 MiB output limit을 감시하다 초과한 경우에 사용합니다. host가 직접 감지한 timeout은 `TIMED_OUT`, host output limit 초과는 `RESOURCE_LIMITED`로 정규화하므로 별도 container exit code가 필요하지 않습니다. 그 밖의 예약되지 않은 exit code는 `SYSTEM_FAILED` / `INFRA_ERROR`입니다.
 
 trusted parser는 원래 Gradle test exit status도 별도로 보존해 XML과 대조합니다. Gradle status `0`인데 XML에 `<failure>` 또는 `<error>`가 있거나, Gradle status가 non-zero인데 XML에 failure와 error가 하나도 없으면 관찰값 모순이므로 exit code `25`를 사용합니다. `<skipped>`는 Gradle이 status `0`으로 처리할 수 있지만 이 계약이 더 엄격하게 suite 실패로 정규화하므로, skipped만으로 생긴 suite 실패는 모순이 아닙니다.
 
-공개 stdout JSON, host stderr, 지속 로그에는 suite별 통과·실패와 정규화된 stage/error category만 기록합니다. raw Gradle output은 container 안의 bounded sink에서 기존 output limit을 적용하는 데만 사용하고 host로 그대로 전달하지 않습니다. JUnit XML 원문, test class·method 이름, assertion message, stack trace, hidden input은 response와 diagnostics/log 어디에도 기록하지 않습니다. 현재 Runner는 raw container output을 stderr에 전달하므로 이 비노출 경계, trusted parser, 예약 exit code 표는 모두 이 revision 이후 구현할 대상이며 아직 구현 또는 실검증되지 않았습니다.
+공개 stdout JSON, host stderr, 지속 로그에는 suite별 통과·실패와 정규화된 stage/error category만 기록합니다. raw Gradle output은 container 안의 bounded sink에서 기존 output limit을 적용하는 데만 사용하고 host로 그대로 전달하지 않습니다. JUnit XML 원문, test class·method 이름, assertion message, stack trace, hidden input은 response와 diagnostics/log 어디에도 기록하지 않습니다. Runner는 host에서 container output의 byte 수만 진단하고 내용을 다시 출력하지 않으며, immutable Python entrypoint는 Python 표준 라이브러리 parser에서 DTD와 entity를 거부합니다.
 
 `runStatus`는 Judge 서비스가 자신의 책임을 완료했는지를 나타냅니다.
 
@@ -223,12 +223,11 @@ compile 단계에서 판정이 끝난 응답입니다. test suite를 판정하�
 
 검증은 실제 Docker command의 `--network none`, 두 개의 좁은 read-only mount, non-root image 설정, 실행 후 남은 Judge container가 없다는 사실도 확인합니다.
 
-이 증거는 revision 전 Runner가 반환한 `check.execution`과 container diagnostics에 대한 것입니다. 현재 Runner는 JUnit XML을 읽거나 `check.suites`를 출력하지 않으므로, 위 `suites` 계약과 매핑·오류 분류는 아직 구현 또는 Docker 실검증됐다는 증거가 없습니다.
+현재 검증은 네 candidate를 각각 3회 실행해 `buggy`는 target 실패/regression 통과, `fixed`는 두 suite 통과, `compile-error`는 suites 없는 `COMPILE_FAILED`, `regression-error`는 target 통과/regression 실패로 확인했습니다. 정규화 JSON의 반복 일치, test 상세 비노출, 격리 옵션과 container cleanup도 함께 검증했습니다.
 
 ## 알려진 한계
 
 - 현재 compile 단계의 non-zero exit는 `COMPILE_FAILED`로 정규화합니다. 따라서 Gradle daemon startup처럼 compile 단계에서 발생한 일부 infrastructure fault가 `COMPILE_FAILED`로 분류될 수 있습니다.
-- 현재 Runner는 container exit code만으로 `execution`을 만들며 JUnit XML 기반 `suites` revision을 아직 구현하지 않았습니다.
 - Phase A는 공개 demo와 로컬 또는 신뢰하는 입력의 기술 검증입니다. Docker와 위 제한만으로 production-grade arbitrary untrusted code security를 주장하지 않습니다.
 - Judge image digest pinning, private problem pack, stronger isolation과 production resource policy는 TODO입니다.
 
