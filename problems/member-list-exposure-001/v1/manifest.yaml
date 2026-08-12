@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "member-list-exposure-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "전체 멤버 조회 후 저장된 멤버가 사라져요",
+    "category": "Backend",
+    "stack": "Java",
+    "bugType": "상태 노출",
+    "estimatedMinutes": 20,
+    "difficulty": "EASY"
+  },
+  "display": {
+    "files": [
+      "src/main/java/package2/MemoryMemberRepository.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/package2/MemoryMemberRepository.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}
