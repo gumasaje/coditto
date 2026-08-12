@@ -17,6 +17,10 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 최소 Spring Backend 어댑터, Phase C의 Vite/React 제출 화면이 구현됐습니다. Backend는 `POST /api/submissions`로 `source` 하나를 받아 별도 Python Runner 프로세스를 호출하고, 검증된 정규화 Judge JSON을 반환합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
+Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제와 Spring Boot/JPA 문제를
+`problems/`에 추가했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고,
+Spring 문제는 같은 격리 경계를 공유하는 별도 dependency-cache image를 사용합니다.
+
 ## Phase C 로컬 실행
 
 Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.6.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
@@ -60,6 +64,20 @@ python3 judge-runner/verify_spike.py
 ```
 
 전체 검증은 `--network none`, offline Gradle, target/regression 구분, test 상세 비노출, 정규화된 JSON의 반복 일치와 container cleanup도 함께 확인합니다.
+
+## Issue #6 PBL 문제 검증
+
+기존 Java Judge 이미지가 로컬에 있고 Docker Desktop의 Client와 Server가 실행 중인
+환경에서 다음 명령을 실행합니다. 검증기는 기존 Java 이미지를 재빌드하지 않고
+Spring Boot/JPA/H2 sibling 이미지만 빌드합니다.
+
+```bash
+python3 -B judge-runner/verify_pbl_problems.py
+```
+
+`member-list-exposure-001`과 `member-generation-validation-001`의 buggy/fixed candidate를
+각각 3회 실행해 `TESTS_FAILED`/`TESTS_PASSED`, target/regression suite, H2
+in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확인합니다.
 
 ## 향후 방향
 

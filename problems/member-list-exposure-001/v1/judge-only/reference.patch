@@ -1,0 +1,8 @@
+diff --git a/src/main/java/package2/MemoryMemberRepository.java b/src/main/java/package2/MemoryMemberRepository.java
+--- a/src/main/java/package2/MemoryMemberRepository.java
++++ b/src/main/java/package2/MemoryMemberRepository.java
+@@ -33,3 +33,3 @@ public class MemoryMemberRepository implements MemberRepository {
+     public List<Role> findAll() {
+-        return members;
++        return List.copyOf(members);
+     }

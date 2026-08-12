@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 구현 및 Docker 실검증 완료, Phase B 최소 API 어댑터 구현, Phase C 제출/결과 UI 및 로컬 관통 검증 완료
+**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 최소 API 어댑터 구현, Phase C 제출/결과 UI 및 로컬 관통 검증 완료
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -19,7 +19,7 @@ Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재�
 
 | 단계 | 범위 | 현재 상태 | 완료 증거 |
 | --- | --- | --- | --- |
-| A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | 네 candidate를 각각 3회 실행해 `execution`과 target/regression suite 구분을 결정론적으로 확인하고 상세 비노출 및 매 실행 후 cleanup 검증 |
+| A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `role-update-001`과 두 공개 PBL 문제를 실제 격리 Docker에서 반복 검증하고 상세 비노출 및 매 실행 후 cleanup 확인 |
 | B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 구현 | endpoint 통합 테스트가 별도 Python subprocess의 정규화 결과를 반환하고, malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
 | C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 완료 | Vite proxy를 통한 실제 API 호출, `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED` 브라우저 표시 및 Frontend 테스트 |
 
@@ -32,7 +32,7 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 | `frontend/` | Issue #1 제출/결과 화면, 이후 제품 UI | 미구현 |
 | `backend/` | Issue #1 Runner 어댑터, 이후 session과 persistence | Phase B 최소 API 어댑터 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
-| `problems/` | 공개 demo fixture와 problem-package 계약 | Phase A 구현 완료 |
+| `problems/` | 공개 demo fixture, 두 PBL 문제와 problem-package 계약 | Phase A 및 Issue #6 구현 완료 |
 
 각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 `POST /api/submissions`에서 최대 128 KiB raw JSON body의 `source` 하나를 받아 role-update-001 v1의 16 KiB decoded-source 계약을 먼저 검증한 뒤 허용 파일 경로에 임시로 기록하고, API가 생성한 container name과 함께 별도 `python3 judge-runner/run.py` subprocess를 호출합니다. raw transport 상한은 JSON escaping으로 인한 byte 확장을 수용하기 위해 source 계약보다 크며, source 자체의 16 KiB 상한을 완화하지 않습니다. API 프로세스는 제출 코드를 load 또는 실행하지 않으며 Runner diagnostics는 API response에 전달하지 않습니다. stdout가 정확히 한 줄의 계약 JSON이고 contract shape를 만족할 때만 이를 반환합니다. Runner 실행 실패·timeout·비계약 stdout은 `SYSTEM_FAILED`/`INFRA_ERROR`로 반환하며, terminal path마다 Python process tree와 해당 Judge container를 정리한 후 temporary candidate directory를 제거합니다. 배포 시 Runner script path는 절대 경로 configuration으로 지정해야 합니다.
 
@@ -47,6 +47,27 @@ python3 judge-runner/run.py --candidate judge-runner/testdata/fixed
 Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 정규화된 Docker·stage 진단은 stderr로 분리합니다. compile 단계와 test 단계를 별도 Gradle 실행과 exit code로 구분하며, 단일 test 실행의 JUnit XML을 immutable parser가 target/regression suite로 사후 배정합니다. 결과 형태는 [Judge 입출력 명세](contracts/judge.md)를 따릅니다.
 
 `judge-runner/verify_spike.py`는 Judge 이미지를 빌드한 뒤 네 candidate를 각각 3회 실행합니다. 기대한 `execution`과 `suites`, 정규화된 JSON의 반복 일치, test 상세 비노출, 실제 `--network none`과 mount 경계, non-root 이미지, 남은 container가 없는지를 함께 검사합니다.
+
+## Issue #6 공개 PBL 문제
+
+Issue #6은 공개 PBL 저장소의 검토된 버그 후보 두 개를 기존 problem-package와
+Runner 계약으로 게시합니다.
+
+- `member-list-exposure-001`은 인메모리 repository가 mutable 내부 목록을 노출하는
+  버그이며 기존 Java/JUnit Judge 이미지를 재사용합니다.
+- `member-generation-validation-001`은 멤버 수정의 기수 검증 누락을 JPA와 H2
+  in-memory DB로 재현합니다. Spring/JPA/H2 의존성을 offline cache에 준비하는
+  `coditto/judge-java21-springboot:phase-a` sibling 이미지를 사용합니다.
+
+Runner는 두 문제에도 공통 `execute.sh`와 `judge_entrypoint.py`, 동일한 resource와
+격리 옵션을 적용합니다. image 선택은 manifest의 `runtime.image`만 따르며 Runner에
+framework 분기를 추가하지 않습니다. 이 결정은
+[ADR 0001](adr/0001-problem-specific-judge-images.md)에 기록합니다.
+
+`judge-runner/verify_pbl_problems.py`는 기존 Java image를 재빌드하지 않고 Spring
+image만 빌드한 뒤, 두 문제의 buggy/fixed candidate를 각각 3회 실행합니다.
+후보 검토 범위와 선택 근거는 [Issue #6 문제 후보 선정 기록](problem-selection-issue-6.md)에
+남깁니다.
 
 ## 공개 데모와 프로덕션 자산 경계
 
