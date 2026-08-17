@@ -1,10 +1,10 @@
 # Backend API 계약: 문제 조회와 제출
 
-**상태:** Draft v0 — 문제 조회와 problemId 기반 제출 구현, 면접 질문 API는 미구현
+**상태:** Draft v0 — 문제 조회, problemId 기반 제출, 면접 질문 API 구현
 
 이 문서는 Frontend가 호출하는 Spring API의 계약을 정의합니다. 그 밑단에서 사용자 코드를 실행하는 Runner의 계약은 [Judge 입출력 명세](judge.md)가 소유합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](../ARCHITECTURE.md)가 소유합니다.
 
-현재 저장소에는 기동 시 `problems/`를 한 번 스캔하는 메모리 인덱스, `GET /api/problems`, `GET /api/problems/{problemId}`, problemId와 선택 version을 받는 `POST /api/submissions`가 구현돼 있습니다. `POST /api/interview-questions`와 "여력 되면" 절은 아직 구현되지 않았습니다.
+현재 저장소에는 기동 시 `problems/`를 한 번 스캔하는 메모리 인덱스, `GET /api/problems`, `GET /api/problems/{problemId}`, problemId와 선택 version을 받는 `POST /api/submissions`, `POST /api/interview-questions`가 구현돼 있습니다. "여력 되면" 절은 아직 구현되지 않았습니다.
 
 ## 범위와 상태
 
@@ -12,7 +12,7 @@
 
 | 범위 | 내용 | 상태 |
 | --- | --- | --- |
-| 1단계 필수 | 문제 목록 조회, 문제 상세 조회, `problemId`를 받는 제출, 목표/회귀 실패 구분, 면접 질문 카드 | 설계 확정 · 구현 예정 |
+| 1단계 필수 | 문제 목록 조회, 문제 상세 조회, `problemId`를 받는 제출, 목표/회귀 실패 구분, 면접 질문 카드 | 구현 |
 | 여력 되면 | 사용자 테스트 제출과 `VERIFIED`, Bug Vaccine, Patch Autopsy | 설계 초안 · 이번 1단계에는 만들지 않음 |
 | 제외 | 브라우저 작업공간, 사용자 에이전트 로그인, 서비스 로그인·회원가입, PostgreSQL, 세션 기반 비동기 제출 API | 이 문서 범위 밖 |
 
@@ -256,7 +256,7 @@ raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. 구현 완�
 
 이 payload는 현재 공통 filter가 `JudgeResponseFactory.rejectedSubmission()`을 사용해 만드는 기존 transport-limit 계약이다. 면접 질문 controller/service는 이를 다시 감싸거나 provider 오류로 바꾸지 않는다. 다른 요청 검증 오류는 위 표의 면접 질문 오류 body를 사용한다.
 
-현재 전역 `SubmissionExceptionHandler`는 모든 `HttpMessageNotReadableException`을 위 Judge rejection payload로 변환한다. 면접 질문 구현에서는 이 handler를 `/api/submissions` 의미로 한정하거나 interview-questions 전용 handler를 우선 적용해야 한다. 그 결과 malformed JSON과 DTO 역직렬화 실패는 표에 정의한 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`가 되어야 한다. 단, raw body 128 KiB 초과는 handler에 도달하기 전 공통 filter가 처리하므로 기존 Judge-shaped `REJECTED` payload를 그대로 유지하며 이 두 경로를 혼동하지 않는다. 구체적인 Spring handler 구현 코드는 이 계약의 범위 밖이다.
+`SubmissionExceptionHandler`는 `/api/submissions`에 한정하고, 면접 질문 endpoint의 unreadable body는 전용 handler가 표에 정의한 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`로 반환한다. raw body 128 KiB 초과는 handler에 도달하기 전 공통 filter가 처리하므로 기존 Judge-shaped `REJECTED` payload를 그대로 유지하며 이 두 경로를 혼동하지 않는다.
 
 #### 프롬프트 입력 경계
 
@@ -350,14 +350,14 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
 
 ## 구현 시 해소한 충돌 지점
 
-아래 하드코딩과 응답 검증 충돌은 문제 조회·problemId 제출 구현에서 해소했습니다. 면접 질문 관련 두 항목은 해당 endpoint 구현 전까지 남아 있습니다.
+아래 하드코딩과 응답 검증 충돌은 구현에서 해소했습니다.
 
 - `JudgeResponseFactory`의 고정 문제 상수를 제거하고 API가 확정한 요청 단위 identity로 오류를 생성합니다.
 - `JudgeRunnerClient.isNormalizedContract`는 Runner 응답의 `problem.id/version`을 요청한 문제와 대조합니다.
 - 임시 candidate 파일은 인덱스에 검증된 `candidate.allowedPaths[0]`에 기록합니다.
 - `isNormalizedContract`는 `check.suites`의 허용 shape와 값을 검증합니다.
-- `SubmissionBodyLimitFilter.shouldNotFilter`가 `/api/submissions` 경로에만 본문 상한을 적용합니다. `POST /api/interview-questions`도 `source`를 받으므로 같은 상한 대상에 포함해야 합니다.
-- 전역 `SubmissionExceptionHandler`가 모든 `HttpMessageNotReadableException`을 Judge rejection payload로 변환합니다. malformed JSON·DTO 역직렬화 실패를 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`로 반환하려면 handler를 `/api/submissions`에 한정하거나 interview-questions 전용 handler를 우선 적용해야 합니다. raw body 128 KiB 초과는 이 변경 대상이 아니라 공통 filter의 기존 Judge-shaped `REJECTED` payload를 유지합니다.
+- `SubmissionBodyLimitFilter.shouldNotFilter`는 `/api/submissions`와 `/api/interview-questions`에 같은 128 KiB transport 상한을 적용합니다.
+- unreadable submission과 interview-question body는 각각의 endpoint 계약에 맞는 exception handler가 처리합니다.
 
 ## TODO
 
