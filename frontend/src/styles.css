@@ -1,6 +1,6 @@
 @import "tailwindcss";
+@source "./**/*.{ts,tsx}";
 
-/* 캡처 1의 라임 액센트 + 캡처 2의 슬레이트 IDE 크롬. 보라 그라데이션은 쓰지 않는다. */
 @theme {
   --font-sans: "IBM Plex Sans KR", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -17,37 +17,41 @@
   --color-danger: #e07070;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--color-void);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-}
-
 @keyframes rise {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
 }
 
-.rise {
-  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+.rise { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.editor-surface {
+  margin: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 0;
+  font: 13px/24px var(--font-mono), ui-monospace, monospace;
+  white-space: pre;
+  tab-size: 4;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.editor-input {
+  color: transparent;
+  caret-color: #c8f000;
+  -webkit-text-fill-color: transparent;
 }
 
 .gutter {
   font-variant-numeric: tabular-nums;
   user-select: none;
+  margin: 0;
+  padding: 12px 8px;
+  font: 13px/24px var(--font-mono), ui-monospace, monospace;
+  color: #8d8b82;
+  text-align: right;
+  border-right: 1px solid #2c2e29;
+  overflow: hidden;
 }
 
 .editor-scroll {
@@ -55,24 +59,16 @@ body {
   scrollbar-color: #3a3c36 transparent;
 }
 
-.split-col {
-  cursor: col-resize;
-}
-
+.split-col,
 .split-row {
-  cursor: row-resize;
+  flex-shrink: 0;
+  background: #2c2e29;
 }
 
-.editor-surface {
-  margin: 0;
-  box-sizing: border-box;
-  padding: 12px;
-  font: 13px/1.5 var(--font-mono);
-  white-space: pre;
-  tab-size: 4;
-  overflow-wrap: normal;
-  word-break: normal;
-}
+.split-col { width: 6px; cursor: col-resize; }
+.split-row { height: 6px; cursor: row-resize; }
+.split-col:hover,
+.split-row:hover { background: #c8f000; }
 
 .tok-comment { color: #6f6d66; }
 .tok-string { color: #d4b483; }

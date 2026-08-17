@@ -52,6 +52,9 @@ function mockApi() {
     if (url === '/api/submissions' && init?.method === 'POST') {
       return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' }, problem: { id: 'role-update-001', version: 1 } })
     }
+    if (url === '/api/interview-questions' && init?.method === 'POST') {
+      return jsonResponse({ status: 'UNAVAILABLE', questions: [] })
+    }
     return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
   })
 }
@@ -83,6 +86,65 @@ describe('catalog', () => {
     expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Back-End' }))
     expect(screen.getByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+  })
+
+  it('groups catalog filters into stack, bug type, and difficulty', async () => {
+    mockApi()
+    render(<App />)
+    await screen.findByRole('link', { name: /회원 권한 수정/ })
+    expect(screen.getByRole('group', { name: '기술 스택' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: '오류 유형' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: '난이도' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Java · Spring' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '상태 보존' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Easy' })).toBeInTheDocument()
+  })
+
+  it('applies section filters independently', async () => {
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      if (String(input) !== '/api/problems') return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+      return jsonResponse({
+        categories: ['Backend'],
+        problems: [
+          catalog.problems[0],
+          {
+            ...catalog.problems[0],
+            id: 'member-query-001',
+            title: '전체 멤버 조회 후 저장된 멤버가 사라져요',
+            stack: 'Java',
+            bugType: '상태 노출',
+            difficulty: 'MEDIUM',
+          },
+        ],
+      })
+    })
+    render(<App />)
+    await screen.findByRole('link', { name: /회원 권한 수정/ })
+    await userEvent.click(screen.getByRole('button', { name: /^Java$/ }))
+    expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /전체 멤버 조회/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Easy' }))
+    expect(screen.getByText('선택한 조건에 맞는 문제가 없습니다.')).toBeInTheDocument()
+  })
+
+  it('opens a category from the workspace crumb', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    mockApi()
+    render(<App />)
+    await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
+    await userEvent.click(screen.getByRole('link', { name: 'Back-End' }))
+    expect(await screen.findByRole('tab', { name: 'Back-End' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+  })
+
+  it('shows generated interview cards on the preview route', async () => {
+    window.location.hash = '#/preview/interview'
+    render(<App />)
+    expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
+    expect(screen.getByText('TESTS_PASSED')).toBeInTheDocument()
+    expect(screen.getByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
+    expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
+    expect(screen.getByText('null 입력이 안전한 이유를 설명해 보세요.')).toBeInTheDocument()
   })
 
   it('opens the workspace for the selected problem', async () => {
@@ -197,5 +259,76 @@ describe('workspace', () => {
     fireEvent.submit(button.closest('form')!)
     expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/submissions')).toHaveLength(1)
     resolveRequest({ ok: true, json: () => Promise.resolve({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } }) } as Response)
+  })
+})
+
+const generatedQuestions = {
+  status: 'GENERATED',
+  questions: [
+    { question: '역할이 생략된 경우를 왜 구분해야 합니까?', rationale: '제출 코드가 두 경로를 같은 분기로 처리합니다.' },
+    { question: '기존 권한을 보존하려면 무엇을 확인해야 합니까?', rationale: 'diff가 컬렉션을 바로 대체합니다.' },
+    { question: 'null 입력이 안전한 이유를 설명해 보세요.', rationale: '추가된 조건이 null 경로를 처리합니다.' },
+  ],
+}
+
+describe('interview cards', () => {
+  it('loads three questions only after TESTS_PASSED', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+      }
+      if (url === '/api/interview-questions' && init?.method === 'POST') return jsonResponse(generatedQuestions)
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
+    expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
+    expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
+    expect(screen.getByText('null 입력이 안전한 이유를 설명해 보세요.')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith('/api/interview-questions', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({
+        problemId: 'role-update-001',
+        version: 1,
+        source: 'class RoleService {}',
+      }),
+    }))
+  })
+
+  it.each(['TESTS_FAILED', 'COMPILE_FAILED'])('does not call interview questions after %s', async (execution) => {
+    window.location.hash = '#/problems/role-update-001'
+    const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ runStatus: 'COMPLETED', check: { execution } })
+      }
+      return jsonResponse({ status: 'GENERATED', questions: generatedQuestions.questions })
+    })
+    render(<App />)
+    fireEvent.submit((await screen.findByRole('button', { name: '제출하기' })).closest('form')!)
+    expect(await screen.findByText(execution)).toBeInTheDocument()
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/interview-questions')).toHaveLength(0)
+    expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
+  })
+
+  it('keeps the judge result when interview questions are UNAVAILABLE', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+      }
+      return jsonResponse({ status: 'UNAVAILABLE', questions: [] })
+    })
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
+    expect(await screen.findByText('TESTS_PASSED')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('질문을 만드는 중…')).not.toBeInTheDocument())
+    expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
   })
 })

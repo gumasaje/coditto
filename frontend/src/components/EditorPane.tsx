@@ -36,21 +36,17 @@ export function EditorPane({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-void">
-      <div className="flex items-center justify-between border-b border-line px-3 py-2 text-[12px]">
-        <label htmlFor="source" className="truncate font-mono text-[12px] text-ink">{path}</label>
-        <span className="tracking-[0.08em] text-mute">{languageFromPath(path)}</span>
+    <div className="editor-pane">
+      <div className="editor-head">
+        <label htmlFor="source" className="editor-path">{path}</label>
+        <span className="lang">{languageFromPath(path)}</span>
       </div>
-      <div className="flex min-h-0 flex-1">
-        <pre ref={gutterRef} aria-hidden="true" className="gutter editor-scroll min-w-10 overflow-hidden border-r border-line px-2 py-3 text-right font-mono text-[12px] leading-6 text-mute">
+      <div className="editor-body">
+        <pre ref={gutterRef} aria-hidden="true" className="gutter editor-scroll">
           {gutter}
         </pre>
-        <div className="relative min-h-0 min-w-0 flex-1">
-          <pre
-            ref={highlightRef}
-            aria-hidden="true"
-            className="editor-surface editor-scroll pointer-events-none absolute inset-0 overflow-auto text-ink"
-          >
+        <div className="editor-stage">
+          <pre ref={highlightRef} aria-hidden="true" className="editor-surface editor-scroll">
             {highlighted}
             {value.endsWith('\n') ? '\n' : null}
           </pre>
@@ -61,7 +57,7 @@ export function EditorPane({
             spellCheck={false}
             onScroll={sync}
             onChange={(event) => onChange(event.target.value)}
-            className="editor-surface editor-scroll absolute inset-0 resize-none border-0 bg-transparent text-transparent caret-acid outline-none disabled:opacity-55"
+            className="editor-surface editor-input editor-scroll"
           />
         </div>
       </div>

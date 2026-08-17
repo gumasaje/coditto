@@ -1,25 +1,40 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { EditorPane } from './components/EditorPane'
+import { InterviewCards } from './components/InterviewCards'
 import { JudgeResult } from './components/JudgeResult'
 import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
 import { NETWORK_ERROR, categoryLabel, difficultyLabel } from './copy'
+import { catalogHash } from './routes'
 import { markPassed } from './progress'
-import { ApiError, JudgeResponse, ProblemDetail } from './types'
+import {
+  ApiError,
+  InterviewQuestion,
+  InterviewResponse,
+  JudgeResponse,
+  ProblemDetail,
+  shouldRequestInterview,
+} from './types'
+
+type InterviewStatus = 'idle' | 'loading' | 'generated' | 'unavailable'
 
 /**
  * 캡처 2의 스플릿 워크스페이스. 지문과 에디터를 같은 다크 크롬 안에서 나눈다.
+ * 면접 카드는 판정과 분리된 후속 호출이며, 생성 실패 시 카드만 접는다.
  */
 export function Workspace({ problemId }: { problemId: string }) {
   const shellRef = useRef<HTMLDivElement>(null)
+  const interviewSeq = useRef(0)
   const [problem, setProblem] = useState<ProblemDetail | null>(null)
   const [source, setSource] = useState('')
   const [result, setResult] = useState<JudgeResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [interviewStatus, setInterviewStatus] = useState<InterviewStatus>('idle')
+  const [questions, setQuestions] = useState<InterviewQuestion[]>([])
   const [leftWidth, setLeftWidth] = useState(42)
-  const [resultHeight, setResultHeight] = useState(168)
+  const [resultHeight, setResultHeight] = useState(220)
 
   useEffect(() => {
     let cancelled = false
@@ -27,6 +42,8 @@ export function Workspace({ problemId }: { problemId: string }) {
     setSource('')
     setResult(null)
     setError(null)
+    setInterviewStatus('idle')
+    setQuestions([])
     fetch(`/api/problems/${encodeURIComponent(problemId)}`)
       .then(async (response) => {
         const body = await response.json() as ProblemDetail & ApiError
@@ -47,12 +64,43 @@ export function Workspace({ problemId }: { problemId: string }) {
     }
   }, [problemId])
 
+  async function loadInterview(seq: number, next: ProblemDetail, submittedSource: string) {
+    setInterviewStatus('loading')
+    setQuestions([])
+    try {
+      const response = await fetch('/api/interview-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problemId: next.id,
+          version: next.version,
+          source: submittedSource,
+        }),
+      })
+      const body = await response.json() as InterviewResponse
+      if (seq !== interviewSeq.current) return
+      if (body.status === 'GENERATED' && body.questions?.length === 3) {
+        setQuestions(body.questions)
+        setInterviewStatus('generated')
+        return
+      }
+      setInterviewStatus('unavailable')
+    } catch {
+      if (seq !== interviewSeq.current) return
+      setInterviewStatus('unavailable')
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (isSubmitting || !problem) return
+    const seq = interviewSeq.current + 1
+    interviewSeq.current = seq
     setIsSubmitting(true)
     setResult(null)
     setError(null)
+    setInterviewStatus('idle')
+    setQuestions([])
     try {
       const response = await fetch('/api/submissions', {
         method: 'POST',
@@ -66,6 +114,9 @@ export function Workspace({ problemId }: { problemId: string }) {
       const body = await response.json() as JudgeResponse
       setResult(body)
       if (body.check?.execution === 'TESTS_PASSED') markPassed(problem.id)
+      if (shouldRequestInterview(body)) {
+        void loadInterview(seq, problem, source)
+      }
     } catch {
       setError(NETWORK_ERROR)
     } finally {
@@ -83,23 +134,23 @@ export function Workspace({ problemId }: { problemId: string }) {
   function dragY(clientY: number) {
     const rect = shellRef.current?.getBoundingClientRect()
     if (!rect) return
-    setResultHeight(Math.min(320, Math.max(96, rect.bottom - clientY)))
+    setResultHeight(Math.min(420, Math.max(96, rect.bottom - clientY)))
   }
 
   if (error && !problem) {
     return (
-      <div className="min-h-dvh bg-void">
-        <SiteHeader center={<a href="#/" className="text-mute no-underline hover:text-ink">문제 목록</a>} />
-        <p role="alert" className="px-5 py-10 text-[14px] text-danger">{error}</p>
+      <div className="page">
+        <SiteHeader center={<a href="#/">문제 목록</a>} />
+        <p role="alert" className="note note-error">{error}</p>
       </div>
     )
   }
 
   if (!problem) {
     return (
-      <div className="min-h-dvh bg-void">
-        <SiteHeader center={<a href="#/" className="text-mute no-underline hover:text-ink">문제 목록</a>} />
-        <p className="px-5 py-10 text-[14px] text-mute">작업공간을 불러오는 중…</p>
+      <div className="page">
+        <SiteHeader center={<a href="#/">문제 목록</a>} />
+        <p className="note">작업공간을 불러오는 중…</p>
       </div>
     )
   }
@@ -108,23 +159,23 @@ export function Workspace({ problemId }: { problemId: string }) {
   const editorLabel = editable?.path ?? '소스 코드'
 
   return (
-    <form className="flex h-dvh flex-col bg-void text-ink" onSubmit={submit}>
+    <form className="workspace" onSubmit={submit}>
       <SiteHeader
         center={
-          <nav className="flex items-center gap-2 text-[12px] text-mute">
-            <a href="#/" className="text-mute no-underline hover:text-ink">문제 목록</a>
+          <nav className="crumb">
+            <a href="#/">문제 목록</a>
             <span>/</span>
-            <span>{categoryLabel(problem.category)}</span>
+            <a href={catalogHash(problem.category)}>{categoryLabel(problem.category)}</a>
             <span>/</span>
-            <span className="max-w-[28rem] truncate text-ink">{problem.title}</span>
+            <span className="crumb-current">{problem.title}</span>
           </nav>
         }
         trailing={
           <span>{difficultyLabel(problem.difficulty)} · {problem.estimatedMinutes}분</span>
         }
       />
-      <div ref={shellRef} className="flex min-h-0 flex-1">
-        <div className="min-h-0 min-w-0" style={{ width: `${leftWidth}%` }}>
+      <div ref={shellRef} className="workspace-body">
+        <div className="pane-left" style={{ width: `${leftWidth}%` }}>
           <StatementPane
             title={problem.title}
             meta={`${difficultyLabel(problem.difficulty)} · ${problem.estimatedMinutes}분 · v${problem.version}`}
@@ -132,23 +183,20 @@ export function Workspace({ problemId }: { problemId: string }) {
           />
         </div>
         <SplitHandle axis="x" onDrag={dragX} />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="editor-col">
           <EditorPane path={editorLabel} value={source} disabled={isSubmitting} onChange={setSource} />
           <SplitHandle axis="y" onDrag={dragY} />
-          <div style={{ height: resultHeight }}>
+          <div className="result-pane" style={{ height: resultHeight }}>
             <JudgeResult result={result} />
+            <InterviewCards status={interviewStatus} questions={questions} />
           </div>
         </div>
       </div>
-      <footer className="flex items-center justify-between border-t border-line bg-panel px-5 py-2.5">
-        <a href="#/" className="text-[13px] text-mute no-underline hover:text-ink">문제 목록</a>
-        <div className="flex items-center gap-4">
-          {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-acid px-4 py-2 text-[13px] font-semibold tracking-[-0.02em] text-acid-ink disabled:opacity-55"
-          >
+      <footer className="workspace-footer">
+        <a href="#/">문제 목록</a>
+        <div className="footer-actions">
+          {error && <p role="alert" className="danger">{error}</p>}
+          <button type="submit" disabled={isSubmitting} className="submit">
             {isSubmitting ? '채점 중…' : '제출하기'}
           </button>
         </div>

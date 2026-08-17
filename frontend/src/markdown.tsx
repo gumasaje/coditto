@@ -3,7 +3,7 @@ import { Fragment, ReactNode } from 'react'
 function inline(text: string): ReactNode[] {
   return text.split(/(`[^`]+`)/g).map((part, index) => {
     if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
-      return <code key={index} className="rounded-[2px] bg-panel px-1 font-mono text-[0.86em] text-acid">{part.slice(1, -1)}</code>
+      return <code key={index}>{part.slice(1, -1)}</code>
     }
     return <Fragment key={index}>{part}</Fragment>
   })
@@ -26,7 +26,7 @@ export function StatementMarkdown({ source }: { source: string }) {
       }
       if (index < lines.length) index += 1
       nodes.push(
-        <pre key={key} className="my-4 overflow-auto border border-line bg-void px-3 py-2 font-mono text-[13px] leading-6 text-ink">
+        <pre key={key}>
           <code>{code.join('\n')}</code>
         </pre>,
       )
@@ -35,7 +35,7 @@ export function StatementMarkdown({ source }: { source: string }) {
     }
     if (line.startsWith('# ')) {
       nodes.push(
-        <h2 key={key} className="mb-4 text-[1.35rem] font-semibold tracking-[-0.03em] text-ink">
+        <h2 key={key}>
           {inline(line.slice(2))}
         </h2>,
       )
@@ -58,7 +58,7 @@ export function StatementMarkdown({ source }: { source: string }) {
       index += 1
     }
     nodes.push(
-      <p key={key} className="mb-4 text-[15px] leading-7 text-mute">
+      <p key={key}>
         {inline(paragraph.join(' '))}
       </p>,
     )

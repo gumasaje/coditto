@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 문제 조회·problemId 제출·면접 질문 API 구현, Phase C 문제 목록·작업공간·problemId 제출 UI 구현(목표/회귀 suites 표시와 면접 질문 카드는 미구현)
+**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 문제 조회·problemId 제출·면접 질문 API 구현, Phase C 문제 목록·작업공간·problemId 제출·면접 카드 UI 구현(목표/회귀 suites 표시는 미구현)
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -21,7 +21,7 @@ Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재�
 | --- | --- | --- | --- |
 | A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `role-update-001`과 두 공개 PBL 문제를 실제 격리 Docker에서 반복 검증하고 상세 비노출 및 매 실행 후 cleanup 확인 |
 | B. API 어댑터 | `backend/`; 문제 목록·상세와 problemId 기반 submission endpoint가 실제 Runner 호출 | 구현 | 기동 시 검증된 문제 인덱스를 만들고 endpoint 통합 테스트가 요청 문제별 Python subprocess의 정규화 결과를 반환하며 malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
-| C. 제출과 결과 UI | `frontend/`; 문제 목록, 작업공간, 제출과 결과 화면 | 구현 | `GET /api/problems` 목록·카테고리 탭, `GET /api/problems/{problemId}` Incident 패널과 코드 입력, `problemId`/`version`/`source` 제출과 `TESTS_PASSED`/`TESTS_FAILED`/`COMPILE_FAILED` 표시 |
+| C. 제출과 결과 UI | `frontend/`; 문제 목록, 작업공간, 제출과 결과 화면 | 구현 | `GET /api/problems` 목록·카테고리 탭, `GET /api/problems/{problemId}` Incident 패널과 코드 입력, `problemId`/`version`/`source` 제출, `TESTS_PASSED` 뒤에만 면접 카드 표시 |
 
 PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 또는 개인화 문제는 Issue #1 범위 밖입니다.
 
@@ -29,7 +29,7 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 
 | 경로 | 책임 | 현재 상태 |
 | --- | --- | --- |
-| `frontend/` | 문제 목록·작업공간·Issue #1 제출/결과 화면, 이후 제품 UI | Phase C 문제 목록·작업공간·problemId 제출 UI 구현 |
+| `frontend/` | 문제 목록·작업공간·제출/결과·면접 카드, 이후 제품 UI | Phase C 문제 목록·작업공간·problemId 제출·면접 카드 UI 구현 |
 | `backend/` | 문제 catalog와 Issue #1 Runner 어댑터, 독립 면접 질문 생성 API, 이후 session과 persistence | Phase B 문제 조회·problemId 제출·면접 질문 API 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
 | `problems/` | 공개 demo fixture, 두 PBL 문제와 problem-package 계약 | Phase A 및 Issue #6 구현 완료 |

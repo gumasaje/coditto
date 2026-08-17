@@ -49,3 +49,17 @@ export type ProblemDetail = {
 export type ApiError = {
   error?: { kind?: string }
 }
+
+export type InterviewQuestion = {
+  question: string
+  rationale: string
+}
+
+export type InterviewResponse = {
+  status: 'GENERATED' | 'UNAVAILABLE'
+  questions: InterviewQuestion[]
+}
+
+export function shouldRequestInterview(result: JudgeResponse): boolean {
+  return result.runStatus === 'COMPLETED' && result.check?.execution === 'TESTS_PASSED'
+}

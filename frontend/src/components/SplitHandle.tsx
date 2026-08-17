@@ -20,11 +20,7 @@ export function SplitHandle({
     <div
       role="separator"
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
-      className={
-        axis === 'x'
-          ? 'split-col w-1.5 shrink-0 bg-line hover:bg-acid'
-          : 'split-row h-1.5 shrink-0 bg-line hover:bg-acid'
-      }
+      className={axis === 'x' ? 'split-col' : 'split-row'}
       onPointerDown={start}
       onPointerMove={move}
     />

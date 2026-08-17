@@ -1,12 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CatalogHero } from './components/CatalogHero'
 import { CategoryTabs } from './components/CategoryTabs'
-import { FilterChips } from './components/FilterChips'
+import { FilterBoard } from './components/FilterBoard'
 import { ProblemTable } from './components/ProblemTable'
 import { SiteHeader } from './components/SiteHeader'
 import { ALL_CATEGORY, NETWORK_ERROR, difficultyLabel } from './copy'
 import { clearPassed, readPassedIds } from './progress'
-import { ProblemCatalog } from './types'
+import { catalogHash, readCatalogCategory } from './routes'
+import { ProblemCatalog, ProblemSummary } from './types'
+
+const DIFFICULTY_ORDER = ['Easy', 'Medium', 'Hard']
+
+function unique(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean)))
+}
+
+function sortDifficulties(values: string[]): string[] {
+  const rest = values.filter((value) => !DIFFICULTY_ORDER.includes(value))
+  return [...DIFFICULTY_ORDER.filter((value) => values.includes(value)), ...rest]
+}
+
+function scopedProblems(catalog: ProblemCatalog, category: string): ProblemSummary[] {
+  if (category === ALL_CATEGORY) return catalog.problems
+  return catalog.problems.filter((problem) => problem.category === category)
+}
 
 /**
  * 캡처 1 메인 페이지 골격: 헤더 → 비대칭 히어로 → 탭/칩 → 테이블.
@@ -14,8 +31,10 @@ import { ProblemCatalog } from './types'
  */
 export function Catalog() {
   const [catalog, setCatalog] = useState<ProblemCatalog | null>(null)
-  const [category, setCategory] = useState(ALL_CATEGORY)
-  const [chip, setChip] = useState<string | null>(null)
+  const [category, setCategory] = useState(readCatalogCategory)
+  const [stack, setStack] = useState<string | null>(null)
+  const [bugType, setBugType] = useState<string | null>(null)
+  const [difficulty, setDifficulty] = useState<string | null>(null)
   const [passedIds, setPassedIds] = useState(readPassedIds)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,49 +55,77 @@ export function Catalog() {
     }
   }, [])
 
-  const tabs = catalog ? [ALL_CATEGORY, ...catalog.categories] : [ALL_CATEGORY]
-  const chips = useMemo(() => {
-    if (!catalog) return []
-    const values = new Set<string>()
-    for (const problem of catalog.problems) {
-      values.add(problem.stack)
-      values.add(problem.bugType)
-      values.add(difficultyLabel(problem.difficulty))
+  useEffect(() => {
+    const sync = () => {
+      setCategory(readCatalogCategory())
+      setStack(null)
+      setBugType(null)
+      setDifficulty(null)
     }
-    return Array.from(values)
-  }, [catalog])
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
 
-  const visible = (catalog?.problems ?? []).filter((problem) => {
-    if (category !== ALL_CATEGORY && problem.category !== category) return false
-    if (!chip) return true
-    return problem.stack === chip || problem.bugType === chip || difficultyLabel(problem.difficulty) === chip
+  const tabs = catalog ? [ALL_CATEGORY, ...catalog.categories] : [ALL_CATEGORY]
+  const activeCategory = catalog && category !== ALL_CATEGORY && !catalog.categories.includes(category)
+    ? ALL_CATEGORY
+    : category
+  const scoped = catalog ? scopedProblems(catalog, activeCategory) : []
+  const groups = useMemo(() => [
+    { id: 'stack', label: '기술 스택', options: unique(scoped.map((problem) => problem.stack)).sort((a, b) => a.localeCompare(b, 'ko')), selected: stack },
+    { id: 'bugType', label: '오류 유형', options: unique(scoped.map((problem) => problem.bugType)).sort((a, b) => a.localeCompare(b, 'ko')), selected: bugType },
+    { id: 'difficulty', label: '난이도', options: sortDifficulties(unique(scoped.map((problem) => difficultyLabel(problem.difficulty)))), selected: difficulty },
+  ], [scoped, stack, bugType, difficulty])
+
+  const visible = scoped.filter((problem) => {
+    if (stack && problem.stack !== stack) return false
+    if (bugType && problem.bugType !== bugType) return false
+    if (difficulty && difficultyLabel(problem.difficulty) !== difficulty) return false
+    return true
   })
+  const filteredOut = visible.length === 0 && scoped.length > 0 && Boolean(stack || bugType || difficulty)
+
+  function selectCategory(next: string) {
+    setStack(null)
+    setBugType(null)
+    setDifficulty(null)
+    setCategory(next)
+    const nextHash = catalogHash(next)
+    if (window.location.hash !== nextHash) window.location.hash = nextHash
+  }
+
+  function toggleFilter(id: string, value: string) {
+    const update = (current: string | null) => current === value ? null : value
+    if (id === 'stack') setStack(update)
+    if (id === 'bugType') setBugType(update)
+    if (id === 'difficulty') setDifficulty(update)
+  }
 
   return (
-    <div className="min-h-dvh bg-void text-ink">
+    <div className="page">
       <SiteHeader
         center="한 번 맞히는 시험이 아니라, 안전하게 고치는 습관을 반복하는 훈련장"
         trailing={
-          <button
-            type="button"
-            className="text-mute hover:text-ink"
-            onClick={() => setPassedIds(clearPassed())}
-          >
+          <button type="button" onClick={() => setPassedIds(clearPassed())}>
             처음부터
           </button>
         }
       />
       {error ? (
-        <p role="alert" className="px-5 py-10 text-[14px] text-danger">{error}</p>
+        <p role="alert" className="note note-error">{error}</p>
       ) : !catalog ? (
-        <p className="px-5 py-10 text-[14px] text-mute">문제를 불러오는 중…</p>
+        <p className="note">문제를 불러오는 중…</p>
       ) : (
         <>
           <CatalogHero passed={passedIds.filter((id) => catalog.problems.some((problem) => problem.id === id)).length} total={catalog.problems.length} />
-          <div className="px-5 py-6">
-            <CategoryTabs tabs={tabs} selected={category} onSelect={(next) => { setCategory(next); setChip(null) }} />
-            <FilterChips chips={chips} selected={chip} onToggle={(next) => setChip((current) => current === next ? null : next)} />
-            <ProblemTable problems={visible} passedIds={passedIds} />
+          <div className="catalog-body">
+            <CategoryTabs tabs={tabs} selected={activeCategory} onSelect={selectCategory} />
+            <FilterBoard groups={groups} onToggle={toggleFilter} />
+            <ProblemTable
+              problems={visible}
+              passedIds={passedIds}
+              emptyMessage={filteredOut ? '선택한 조건에 맞는 문제가 없습니다.' : '이 카테고리에 준비된 문제가 없습니다.'}
+            />
           </div>
         </>
       )}
