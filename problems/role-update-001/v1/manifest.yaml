@@ -4,6 +4,19 @@
     "id": "role-update-001",
     "version": 1
   },
+  "catalog": {
+    "title": "회원 권한 수정 시 기존 관리자 권한이 사라져요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "상태 보존",
+    "estimatedMinutes": 30,
+    "difficulty": "EASY"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/coditto/demo/RoleService.java"
+    ]
+  },
   "runtime": {
     "java": 21,
     "buildTool": {

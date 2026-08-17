@@ -1,4 +1,6 @@
 coditto:
+  problems:
+    root-path: ../problems
   runner:
     python-command: python3
     # Resolve this path from the backend process working directory. Production

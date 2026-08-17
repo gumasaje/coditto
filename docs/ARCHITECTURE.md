@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 최소 API 어댑터 구현, Phase C 제출/결과 UI 및 로컬 관통 검증 완료
+**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 문제 조회·problemId 제출 API 구현, Phase C 기존 단일 문제 제출/결과 UI 구현(신규 problemId 계약 연결은 미구현)
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -20,8 +20,8 @@ Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재�
 | 단계 | 범위 | 현재 상태 | 완료 증거 |
 | --- | --- | --- | --- |
 | A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `role-update-001`과 두 공개 PBL 문제를 실제 격리 Docker에서 반복 검증하고 상세 비노출 및 매 실행 후 cleanup 확인 |
-| B. API 어댑터 | `backend/`; 최소 Spring Boot submission endpoint가 실제 Runner 호출 | 구현 | endpoint 통합 테스트가 별도 Python subprocess의 정규화 결과를 반환하고, malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
-| C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 완료 | Vite proxy를 통한 실제 API 호출, `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED` 브라우저 표시 및 Frontend 테스트 |
+| B. API 어댑터 | `backend/`; 문제 목록·상세와 problemId 기반 submission endpoint가 실제 Runner 호출 | 구현 | 기동 시 검증된 문제 인덱스를 만들고 endpoint 통합 테스트가 요청 문제별 Python subprocess의 정규화 결과를 반환하며 malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
+| C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 기존 단일 문제 UI 구현 · 신규 계약 연결 미구현 | 기존 `{source}` 요청의 결과 표시와 Frontend 테스트는 구현됐으나 필수 `problemId`와 문제 조회 화면은 후속 Frontend 범위 |
 
 PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 또는 개인화 문제는 Issue #1 범위 밖입니다.
 
@@ -30,11 +30,11 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 | 경로 | 책임 | 현재 상태 |
 | --- | --- | --- |
 | `frontend/` | Issue #1 제출/결과 화면, 이후 제품 UI | 미구현 |
-| `backend/` | Issue #1 Runner 어댑터, 이후 session과 persistence | Phase B 최소 API 어댑터 구현 |
+| `backend/` | 문제 catalog와 Issue #1 Runner 어댑터, 이후 session과 persistence | Phase B 문제 조회·problemId 제출 API 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
 | `problems/` | 공개 demo fixture, 두 PBL 문제와 problem-package 계약 | Phase A 및 Issue #6 구현 완료 |
 
-각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 `POST /api/submissions`에서 최대 128 KiB raw JSON body의 `source` 하나를 받아 role-update-001 v1의 16 KiB decoded-source 계약을 먼저 검증한 뒤 허용 파일 경로에 임시로 기록하고, API가 생성한 container name과 함께 별도 `python3 judge-runner/run.py` subprocess를 호출합니다. raw transport 상한은 JSON escaping으로 인한 byte 확장을 수용하기 위해 source 계약보다 크며, source 자체의 16 KiB 상한을 완화하지 않습니다. API 프로세스는 제출 코드를 load 또는 실행하지 않으며 Runner diagnostics는 API response에 전달하지 않습니다. stdout가 정확히 한 줄의 계약 JSON이고 contract shape를 만족할 때만 이를 반환합니다. Runner 실행 실패·timeout·비계약 stdout은 `SYSTEM_FAILED`/`INFRA_ERROR`로 반환하며, terminal path마다 Python process tree와 해당 Judge container를 정리한 후 temporary candidate directory를 제거합니다. 배포 시 Runner script path는 절대 경로 configuration으로 지정해야 합니다.
+각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 기동 시 `problems/`의 JSON 문법 `manifest.yaml`, statement와 명시적으로 공개된 base 파일을 검증해 immutable 인덱스를 만들며, 잘못된 패키지는 경고 로그를 남기고 제외합니다. 조회 요청은 이 인덱스만 사용하고 `judge-only/` 자산을 읽거나 반환하지 않습니다. `POST /api/submissions`는 최대 128 KiB raw JSON body의 필수 `problemId`, 선택 `version`, `source` 하나를 받아 게시된 문제의 candidate 계약을 검증한 뒤 `allowedPaths[0]`에 임시로 기록하고, API가 생성한 container name과 함께 별도 `python3 judge-runner/run.py` subprocess를 호출합니다. raw transport 상한은 JSON escaping으로 인한 byte 확장을 수용하기 위해 source 계약보다 크며, source 자체의 최대 16 KiB 상한을 완화하지 않습니다. API 프로세스는 제출 코드를 load 또는 실행하지 않으며 Runner diagnostics는 API response에 전달하지 않습니다. stdout가 정확히 한 줄의 계약 JSON이고 요청한 problem identity와 contract shape를 만족할 때만 이를 반환합니다. Runner 실행 실패·timeout·비계약 stdout은 `SYSTEM_FAILED`/`INFRA_ERROR`로 반환하며, terminal path마다 Python process tree와 해당 Judge container를 정리한 후 temporary candidate directory를 제거합니다. 배포 시 problem root와 Runner script path는 절대 경로 configuration으로 지정해야 합니다.
 
 ## Phase A 구현 경계
 

@@ -15,13 +15,15 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 [Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 최소 Spring Backend 어댑터, Phase C의 Vite/React 제출 화면이 구현됐습니다. Backend는 `POST /api/submissions`로 `source` 하나를 받아 별도 Python Runner 프로세스를 호출하고, 검증된 정규화 Judge JSON을 반환합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 Vite/React 단일 문제 제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. 기존 Frontend를 이 다중 문제 계약에 연결하는 작업은 이 Backend phase의 범위 밖입니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
 Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제와 Spring Boot/JPA 문제를
 `problems/`에 추가했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고,
 Spring 문제는 같은 격리 경계를 공유하는 별도 dependency-cache image를 사용합니다.
 
 ## Phase C 로컬 실행
+
+현재 `frontend/`는 이전 `{ "source": ... }` 단일 문제 요청을 사용하므로 필수 `problemId` 계약과 아직 연결되지 않았습니다. 아래 명령은 각 component 실행용이며, 새 문제 목록·상세·제출 API는 Frontend 연결 전까지 curl 또는 API client로 검증합니다.
 
 Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.6.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
 
