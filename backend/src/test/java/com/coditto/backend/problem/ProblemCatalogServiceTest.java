@@ -40,6 +40,16 @@ class ProblemCatalogServiceTest {
         Assertions.assertThat(service.resolve("alpha-problem", null)).get()
                 .extracting(PublishedProblem::version)
                 .isEqualTo(2);
+        Assertions.assertThat(service.resolveInterview("alpha-problem", 1)).get()
+                .extracting(
+                        InterviewProblem::version,
+                        InterviewProblem::allowedPath,
+                        InterviewProblem::statement,
+                        InterviewProblem::baseContent)
+                .containsExactly(1, CANDIDATE_PATH, "alpha-v1", "class Candidate {}");
+        Assertions.assertThat(service.resolveInterview("alpha-problem", null)).get()
+                .extracting(InterviewProblem::version, InterviewProblem::statement)
+                .containsExactly(2, "alpha-v2");
 
         deleteRecursively(alphaV1);
         Assertions.assertThat(service.resolve("alpha-problem", 1)).isPresent();
