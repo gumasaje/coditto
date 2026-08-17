@@ -28,7 +28,11 @@ public class SubmissionBodyLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equals(request.getMethod()) || !"/api/submissions".equals(request.getRequestURI());
+        if (!"POST".equals(request.getMethod())) {
+            return true;
+        }
+        String path = request.getRequestURI();
+        return !"/api/submissions".equals(path) && !"/api/interview-questions".equals(path);
     }
 
     @Override

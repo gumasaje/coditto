@@ -74,6 +74,21 @@ public class ProblemCatalogService {
         return Optional.ofNullable(problem).map(IndexedProblem::published);
     }
 
+    /**
+     * Resolves only data loaded from the public problem package at startup.
+     * This deliberately has no filesystem access on the request path.
+     */
+    public Optional<InterviewProblem> resolveInterview(String problemId, Integer requestedVersion) {
+        NavigableMap<Integer, IndexedProblem> versions = problems.get(problemId);
+        if (versions == null || versions.isEmpty()) {
+            return Optional.empty();
+        }
+        IndexedProblem problem = requestedVersion == null
+                ? versions.lastEntry().getValue()
+                : versions.get(requestedVersion);
+        return Optional.ofNullable(problem).map(IndexedProblem::interview);
+    }
+
     public static boolean isValidProblemId(String problemId) {
         return problemId != null && PROBLEM_ID_PATTERN.matcher(problemId).matches();
     }
@@ -210,11 +225,16 @@ public class ProblemCatalogService {
         Path baseRoot = versionDirectory.resolve("base");
         require(Files.isDirectory(baseRoot, LinkOption.NOFOLLOW_LINKS), "base directory is missing");
         List<ProblemFile> files = new ArrayList<>();
+        String candidateBaseContent = null;
         for (String displayPath : displayPaths) {
             Path source = resolveBaseFile(baseRoot, displayPath);
             String content = readUtf8(source, MAX_DISPLAY_FILE_BYTES);
             files.add(new ProblemFile(displayPath, allowedPaths.contains(displayPath), content));
+            if (allowedPaths.getFirst().equals(displayPath)) {
+                candidateBaseContent = content;
+            }
         }
+        require(candidateBaseContent != null, "candidate base file is missing");
 
         String statement = readUtf8(
                 requireRegularFile(versionDirectory.resolve("statement.md"), "statement.md"),
@@ -241,7 +261,14 @@ public class ProblemCatalogService {
         return new IndexedProblem(
                 summary,
                 detail,
-                new PublishedProblem(id, version, allowedPaths.getFirst(), maxBytes));
+                new PublishedProblem(id, version, allowedPaths.getFirst(), maxBytes),
+                new InterviewProblem(
+                        id,
+                        version,
+                        allowedPaths.getFirst(),
+                        maxBytes,
+                        statement,
+                        candidateBaseContent));
     }
 
     private ProblemCatalogResponse buildCatalog(
@@ -353,7 +380,8 @@ public class ProblemCatalogService {
     private record IndexedProblem(
             ProblemSummary summary,
             ProblemDetailResponse detail,
-            PublishedProblem published) {
+            PublishedProblem published,
+            InterviewProblem interview) {
     }
 
     private static final class InvalidProblemException extends RuntimeException {

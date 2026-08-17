@@ -7,3 +7,8 @@ coditto:
     # deployment must set an absolute path instead of relying on this default.
     script-path: ../judge-runner/run.py
     timeout: 75s
+  interview:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      endpoint: https://api.openai.com/v1/chat/completions
+      model: gpt-4o-mini

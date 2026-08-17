@@ -15,7 +15,7 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 [Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 Vite/React 단일 문제 제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. 기존 Frontend를 이 다중 문제 계약에 연결하는 작업은 이 Backend phase의 범위 밖입니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 Vite/React 단일 문제 제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. 별도 `POST /api/interview-questions`는 공개 statement와 submitted unified diff만 OpenAI에 전달해 질문 카드 세 개를 생성하며, key가 없거나 생성에 실패하면 Judge 경로와 독립적으로 `UNAVAILABLE`을 반환합니다. 실제 key 연결 검증과 Frontend 연결은 이 Backend phase의 범위 밖입니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
 Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제와 Spring Boot/JPA 문제를
 `problems/`에 추가했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고,
@@ -42,6 +42,8 @@ npm run dev
 ```
 
 Frontend는 `http://localhost:5173`에서 열고 `/api` 상대 경로로 Backend `http://localhost:8080`에 요청합니다. Vite proxy 설정은 `frontend/vite.config.ts`에 있습니다. Backend를 먼저 실행한 뒤 Frontend 화면의 textarea에 `RoleService.java` 전체를 붙여 넣고 제출합니다.
+
+면접 질문 API의 OpenAI 호출은 선택 사항입니다. `OPENAI_API_KEY`가 비어 있으면 외부 요청 없이 `UNAVAILABLE` 응답을 반환합니다.
 
 샘플 제출 파일은 다음과 같습니다.
 
