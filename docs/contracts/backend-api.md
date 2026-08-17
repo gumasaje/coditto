@@ -1,10 +1,10 @@
 # Backend API 계약: 문제 조회와 제출
 
-**상태:** Draft v0 — 설계만 확정, 아직 구현 아님
+**상태:** Draft v0 — 문제 조회와 problemId 기반 제출 구현, 면접 질문 API는 미구현
 
 이 문서는 Frontend가 호출하는 Spring API의 계약을 정의합니다. 그 밑단에서 사용자 코드를 실행하는 Runner의 계약은 [Judge 입출력 명세](judge.md)가 소유합니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](../ARCHITECTURE.md)가 소유합니다.
 
-현재 저장소에 구현된 것은 `POST /api/submissions` 하나이며 `{"source": "..."}` 하나만 받고 문제는 `role-update-001` v1로 하드코딩돼 있습니다. 이 문서의 모든 엔드포인트와 필드는 아직 코드에 존재하지 않습니다.
+현재 저장소에는 기동 시 `problems/`를 한 번 스캔하는 메모리 인덱스, `GET /api/problems`, `GET /api/problems/{problemId}`, problemId와 선택 version을 받는 `POST /api/submissions`가 구현돼 있습니다. `POST /api/interview-questions`와 "여력 되면" 절은 아직 구현되지 않았습니다.
 
 ## 범위와 상태
 
@@ -42,7 +42,7 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
 
 ### 카탈로그 메타데이터
 
-목록 화면에 필요한 제목·카테고리·기술 스택·난이도는 현재 어디에도 없습니다. `manifest.yaml`에 최상위 `catalog` 블록을 추가합니다.
+목록 화면에 필요한 제목·카테고리·기술 스택·난이도는 `manifest.yaml`의 최상위 `catalog` 블록에 둡니다.
 
 ```json
 {
@@ -348,14 +348,14 @@ provider 선택과 실제 프롬프트 문구는 이 계약의 범위 밖이다.
 
 `GET /api/problems/{problemId}/reference-patch`로 Base·Reference diff를 반환합니다. **이 엔드포인트는 `judge-only/reference.patch`를 공개하므로 위 공개 경계의 예외입니다.** 사용자가 이미 통과한 뒤에만 접근을 허용해야 하는데, 로그인과 제출 이력이 모두 범위 밖이라 1단계 구조로는 그 조건을 서버가 확인할 수 없습니다. 이 게이팅 문제가 풀리기 전에는 구현하지 않습니다.
 
-## 기존 구현과 충돌하는 지점
+## 구현 시 해소한 충돌 지점
 
-아래는 코드에서 확인한, 이 계약을 구현하기 전에 반드시 바꿔야 하는 곳입니다.
+아래 하드코딩과 응답 검증 충돌은 문제 조회·problemId 제출 구현에서 해소했습니다. 면접 질문 관련 두 항목은 해당 endpoint 구현 전까지 남아 있습니다.
 
-- `JudgeResponseFactory`의 `PROBLEM_ID`·`VERSION` 상수가 문제 식별자를 하드코딩합니다. 요청 단위 값으로 바뀌어야 합니다.
-- `JudgeRunnerClient.isNormalizedContract`가 Runner 응답의 `problem.id`와 `version`을 위 상수와 대조합니다. 요청한 문제와 대조하도록 바뀌어야 합니다.
-- 같은 클래스의 `CANDIDATE_FILE` 상수가 `src/main/java/com/coditto/demo/RoleService.java`를 하드코딩합니다. manifest의 `candidate.allowedPaths[0]`에서 와야 합니다.
-- `isNormalizedContract`는 `check`에 `id`와 `execution` 외의 필드가 있으면 응답 전체를 거부합니다. `suites`를 추가하려면 이 허용 목록을 함께 열어야 하며, Runner와 API를 같은 변경에서 바꾸지 않으면 모든 제출이 `SYSTEM_FAILED`가 됩니다.
+- `JudgeResponseFactory`의 고정 문제 상수를 제거하고 API가 확정한 요청 단위 identity로 오류를 생성합니다.
+- `JudgeRunnerClient.isNormalizedContract`는 Runner 응답의 `problem.id/version`을 요청한 문제와 대조합니다.
+- 임시 candidate 파일은 인덱스에 검증된 `candidate.allowedPaths[0]`에 기록합니다.
+- `isNormalizedContract`는 `check.suites`의 허용 shape와 값을 검증합니다.
 - `SubmissionBodyLimitFilter.shouldNotFilter`가 `/api/submissions` 경로에만 본문 상한을 적용합니다. `POST /api/interview-questions`도 `source`를 받으므로 같은 상한 대상에 포함해야 합니다.
 - 전역 `SubmissionExceptionHandler`가 모든 `HttpMessageNotReadableException`을 Judge rejection payload로 변환합니다. malformed JSON·DTO 역직렬화 실패를 `400` + `INVALID_INTERVIEW_QUESTION_REQUEST`로 반환하려면 handler를 `/api/submissions`에 한정하거나 interview-questions 전용 handler를 우선 적용해야 합니다. raw body 128 KiB 초과는 이 변경 대상이 아니라 공통 filter의 기존 Judge-shaped `REJECTED` payload를 유지합니다.
 
