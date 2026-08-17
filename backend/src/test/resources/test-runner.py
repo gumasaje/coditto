@@ -7,7 +7,16 @@ import time
 
 candidate = pathlib.Path(sys.argv[sys.argv.index("--candidate") + 1])
 container_name = sys.argv[sys.argv.index("--container-name") + 1]
-source = (candidate / "src/main/java/com/coditto/demo/RoleService.java").read_text()
+problem_id = sys.argv[sys.argv.index("--problem-id") + 1]
+version = int(sys.argv[sys.argv.index("--version") + 1])
+candidate_files = [path for path in candidate.rglob("*") if path.is_file()]
+if len(candidate_files) != 1:
+    raise SystemExit(3)
+candidate_file = candidate_files[0]
+source = candidate_file.read_text()
+pathlib.Path(__file__).with_name("runner-invoked.txt").write_text(
+    f"{problem_id}\n{version}\n{candidate_file.relative_to(candidate).as_posix()}\n"
+)
 
 if source in {"timeout", "record-cleanup"}:
     pathlib.Path(__file__).with_name("runner-record.txt").write_text(
@@ -44,7 +53,7 @@ elif source == "not-json":
 elif source == "rejected":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "REJECTED",
         "error": {"kind": "INVALID_SUBMISSION"},
     }, separators=(",", ":")))
@@ -52,7 +61,7 @@ elif source == "rejected":
 elif source == "system-failed":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "SYSTEM_FAILED",
         "error": {"kind": "CONTENT_ERROR"},
     }, separators=(",", ":")))
@@ -60,7 +69,7 @@ elif source == "system-failed":
 elif source == "wrong-exit":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "COMPLETED",
         "check": {"id": "official", "execution": "TESTS_PASSED"},
     }, separators=(",", ":")))
@@ -68,7 +77,14 @@ elif source == "wrong-exit":
 elif source == "wrong-types":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": "1"},
+        "problem": {"id": problem_id, "version": str(version)},
+        "runStatus": "COMPLETED",
+        "check": {"id": "official", "execution": "TESTS_PASSED"},
+    }, separators=(",", ":")))
+elif source == "wrong-problem-identity":
+    print(json.dumps({
+        "schemaVersion": "draft-v0",
+        "problem": {"id": "different-problem", "version": version},
         "runStatus": "COMPLETED",
         "check": {"id": "official", "execution": "TESTS_PASSED"},
     }, separators=(",", ":")))
@@ -78,7 +94,7 @@ elif source == "oversized-stdout":
 elif source == "suites":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "COMPLETED",
         "check": {
             "id": "official",
@@ -90,7 +106,7 @@ elif source == "suites":
 elif source == "compile-failed":
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "COMPLETED",
         "check": {"id": "official", "execution": "COMPILE_FAILED"},
     }, separators=(",", ":")))
@@ -111,7 +127,7 @@ elif source.startswith("invalid-suites-"):
         suites = []
     print(json.dumps({
         "schemaVersion": "draft-v0",
-        "problem": {"id": "role-update-001", "version": 1},
+        "problem": {"id": problem_id, "version": version},
         "runStatus": "COMPLETED",
         "check": {
             "id": "official",
@@ -124,7 +140,7 @@ elif source.startswith("invalid-suites-"):
 execution = "TESTS_PASSED" if "return requestedRole" in source else "TESTS_FAILED"
 print(json.dumps({
     "schemaVersion": "draft-v0",
-    "problem": {"id": "role-update-001", "version": 1},
+    "problem": {"id": problem_id, "version": version},
     "runStatus": "COMPLETED",
     "check": {"id": "official", "execution": execution},
 }, separators=(",", ":")))

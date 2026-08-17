@@ -24,9 +24,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class JudgeRunnerClient {
     private static final int MAX_RUNNER_STDOUT_BYTES = 64 * 1024;
-    private static final Path CANDIDATE_FILE = Path.of(
-            "src", "main", "java", "com", "coditto", "demo", "RoleService.java");
-
     private final RunnerProperties properties;
     private final ObjectMapper objectMapper;
     private final JudgeResponseFactory responseFactory;
@@ -40,10 +37,13 @@ public class JudgeRunnerClient {
         this.responseFactory = responseFactory;
     }
 
-    public JudgeResult judge(SubmissionRequest request) {
+    public JudgeResult judge(ResolvedSubmission request) {
         if (request == null || request.source() == null
-                || request.source().getBytes(StandardCharsets.UTF_8).length > SubmissionLimits.MAX_SOURCE_BYTES) {
-            return responseFactory.rejectedSubmission();
+                || request.source().getBytes(StandardCharsets.UTF_8).length
+                        > Math.min(SubmissionLimits.MAX_SOURCE_BYTES, request.maxCandidateBytes())) {
+            return request == null
+                    ? responseFactory.rejectedSubmission()
+                    : responseFactory.rejectedSubmission(request.problemId(), request.version());
         }
 
         String containerName = "coditto-api-" + UUID.randomUUID().toString().replace("-", "");
@@ -52,10 +52,10 @@ public class JudgeRunnerClient {
         TemporaryCandidate candidate = null;
         LinkedHashSet<ProcessHandle> knownDescendants = new LinkedHashSet<>();
         boolean interrupted = false;
-        JudgeResult result = responseFactory.infrastructureFailure();
+        JudgeResult result = responseFactory.infrastructureFailure(request.problemId(), request.version());
         try {
-            candidate = TemporaryCandidate.create(request.source());
-            Process runnerProcess = startRunner(candidate.directory(), containerName);
+            candidate = TemporaryCandidate.create(request.source(), request.candidatePath());
+            Process runnerProcess = startRunner(request, candidate.directory(), containerName);
             process = runnerProcess;
             AtomicBoolean outputLimitExceeded = new AtomicBoolean(false);
             stdoutExecutor = Executors.newSingleThreadExecutor();
@@ -65,7 +65,7 @@ public class JudgeRunnerClient {
             if (waitForRunner(runnerProcess, outputLimitExceeded, knownDescendants)) {
                 String output = stdout.get(5, TimeUnit.SECONDS);
                 if (!outputLimitExceeded.get()) {
-                    JsonNode runnerResult = parseContractJson(output);
+                    JsonNode runnerResult = parseContractJson(output, request.problemId(), request.version());
                     if (runnerResult != null && hasExpectedExitStatus(runnerProcess.exitValue(), runnerResult)) {
                         result = responseFactory.fromRunner(runnerResult);
                     }
@@ -74,7 +74,7 @@ public class JudgeRunnerClient {
         } catch (InterruptedException exception) {
             interrupted = true;
         } catch (Exception exception) {
-            result = responseFactory.infrastructureFailure();
+            result = responseFactory.infrastructureFailure(request.problemId(), request.version());
         } finally {
             boolean restoreInterrupted = interrupted || Thread.interrupted();
             boolean processStopped = terminateProcessTree(process, knownDescendants);
@@ -88,11 +88,11 @@ public class JudgeRunnerClient {
                 try {
                     candidate.close();
                 } catch (IOException exception) {
-                    result = responseFactory.infrastructureFailure();
+                    result = responseFactory.infrastructureFailure(request.problemId(), request.version());
                 }
             }
             if (!processStopped) {
-                result = responseFactory.infrastructureFailure();
+                result = responseFactory.infrastructureFailure(request.problemId(), request.version());
             }
             if (restoreInterrupted) {
                 Thread.currentThread().interrupt();
@@ -101,12 +101,13 @@ public class JudgeRunnerClient {
         return result;
     }
 
-    private Process startRunner(Path candidateDirectory, String containerName) throws IOException {
+    private Process startRunner(ResolvedSubmission request, Path candidateDirectory, String containerName)
+            throws IOException {
         List<String> command = List.of(
                 properties.pythonCommand(),
                 properties.scriptPath(),
-                "--problem-id", JudgeResponseFactory.PROBLEM_ID,
-                "--version", Integer.toString(JudgeResponseFactory.VERSION),
+                "--problem-id", request.problemId(),
+                "--version", Integer.toString(request.version()),
                 "--candidate", candidateDirectory.toString(),
                 "--container-name", containerName);
         return new ProcessBuilder(command)
@@ -156,29 +157,29 @@ public class JudgeRunnerClient {
         return properties.timeout() == null ? Duration.ofSeconds(75) : properties.timeout();
     }
 
-    private JsonNode parseContractJson(String stdout) {
+    private JsonNode parseContractJson(String stdout, String problemId, int version) {
         String[] lines = stdout.strip().split("\\R", -1);
         if (lines.length != 1 || lines[0].isBlank()) {
             return null;
         }
         try {
             JsonNode value = objectMapper.readTree(lines[0]);
-            return isNormalizedContract(value) ? value : null;
+            return isNormalizedContract(value, problemId, version) ? value : null;
         } catch (JsonProcessingException exception) {
             return null;
         }
     }
 
-    private boolean isNormalizedContract(JsonNode value) {
+    private boolean isNormalizedContract(JsonNode value, String problemId, int version) {
         if (!value.isObject()
                 || !hasOnlyFields(value, "schemaVersion", "problem", "runStatus", "check", "error")
                 || !hasOnlyFields(value.path("problem"), "id", "version")
                 || !value.path("schemaVersion").isTextual()
                 || !"draft-v0".equals(value.path("schemaVersion").textValue())
                 || !value.path("problem").path("id").isTextual()
-                || !JudgeResponseFactory.PROBLEM_ID.equals(value.path("problem").path("id").textValue())
+                || !problemId.equals(value.path("problem").path("id").textValue())
                 || !value.path("problem").path("version").isInt()
-                || JudgeResponseFactory.VERSION != value.path("problem").path("version").intValue()
+                || version != value.path("problem").path("version").intValue()
                 || !value.path("runStatus").isTextual()) {
             return false;
         }
@@ -304,12 +305,27 @@ public class JudgeRunnerClient {
             this.directory = directory;
         }
 
-        static TemporaryCandidate create(String source) throws IOException {
+        static TemporaryCandidate create(String source, String candidatePath) throws IOException {
             Path directory = Files.createTempDirectory("coditto-submission-");
-            Path file = directory.resolve(CANDIDATE_FILE);
-            Files.createDirectories(file.getParent());
-            Files.writeString(file, source, StandardCharsets.UTF_8);
-            return new TemporaryCandidate(directory);
+            try {
+                Path relative = Path.of(candidatePath);
+                if (relative.isAbsolute() || relative.startsWith("..") || !relative.equals(relative.normalize())) {
+                    throw new IOException("invalid indexed candidate path");
+                }
+                Path file = directory.resolve(relative).normalize();
+                if (!file.startsWith(directory)) {
+                    throw new IOException("indexed candidate path escapes temporary directory");
+                }
+                Files.createDirectories(file.getParent());
+                Files.writeString(file, source, StandardCharsets.UTF_8);
+                return new TemporaryCandidate(directory);
+            } catch (Exception exception) {
+                deleteDirectory(directory);
+                if (exception instanceof IOException ioException) {
+                    throw ioException;
+                }
+                throw new IOException("could not create candidate file", exception);
+            }
         }
 
         Path directory() {
@@ -318,6 +334,10 @@ public class JudgeRunnerClient {
 
         @Override
         public void close() throws IOException {
+            deleteDirectory(directory);
+        }
+
+        private static void deleteDirectory(Path directory) throws IOException {
             try (var paths = Files.walk(directory)) {
                 paths.sorted((left, right) -> right.compareTo(left)).forEach(path -> {
                     try {
