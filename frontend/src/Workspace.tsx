@@ -34,7 +34,7 @@ export function Workspace({ problemId }: { problemId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [interviewStatus, setInterviewStatus] = useState<InterviewStatus>('idle')
   const [questions, setQuestions] = useState<InterviewQuestion[]>([])
-  const [leftWidth, setLeftWidth] = useState(42)
+  const [leftWidth, setLeftWidth] = useState(28)
   const [resultHeight, setResultHeight] = useState(220)
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export function Workspace({ problemId }: { problemId: string }) {
     const rect = shellRef.current?.getBoundingClientRect()
     if (!rect) return
     const next = ((clientX - rect.left) / rect.width) * 100
-    setLeftWidth(Math.min(62, Math.max(28, next)))
+    setLeftWidth(Math.min(48, Math.max(22, next)))
   }
 
   function dragY(clientY: number) {

@@ -12,7 +12,7 @@ export function buildFileTree(files: ProblemFile[]): FileTreeNode[] {
   for (const file of files) {
     insertNode(roots, file.path.split('/').filter(Boolean), file)
   }
-  return roots
+  return compactSingleChildFolders(roots)
 }
 
 function insertNode(nodes: FileTreeNode[], parts: string[], file: ProblemFile) {
@@ -29,4 +29,21 @@ function insertNode(nodes: FileTreeNode[], parts: string[], file: ProblemFile) {
     node.children ??= []
     insertNode(node.children, rest, file)
   }
+}
+
+/** VS Code Compact Folders: 자식이 폴더 하나뿐인 디렉터리만 표시명을 한 줄로 합친다. */
+export function compactSingleChildFolders(nodes: FileTreeNode[]): FileTreeNode[] {
+  return nodes.map((node) => compactNode(node))
+}
+
+function compactNode(node: FileTreeNode): FileTreeNode {
+  if (!node.children) return node
+  const children = compactSingleChildFolders(node.children)
+  let name = node.name
+  let next = children
+  while (next.length === 1 && next[0].children) {
+    name = `${name}/${next[0].name}`
+    next = next[0].children
+  }
+  return { ...node, name, children: next }
 }
