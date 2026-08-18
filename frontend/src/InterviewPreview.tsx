@@ -5,7 +5,7 @@ import { JudgeResult } from './components/JudgeResult'
 import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
-import { LANDING_INTERVIEW_QUESTIONS, LANDING_PROBLEM, ROLE_SERVICE_FIXED } from './landingExample'
+import { LANDING_INTERVIEW_QUESTIONS, LANDING_PASSED_RESULT, LANDING_PROBLEM, ROLE_SERVICE_FIXED } from './landingExample'
 import { catalogHash } from './routes'
 
 export const PREVIEW_QUESTIONS = LANDING_INTERVIEW_QUESTIONS
@@ -73,13 +73,7 @@ export function InterviewPreview() {
           />
           <SplitHandle axis="y" onDrag={dragY} />
           <div className="result-pane" style={{ height: resultHeight }}>
-            <JudgeResult
-              result={{
-                runStatus: 'COMPLETED',
-                check: { execution: 'TESTS_PASSED' },
-                problem: { id: 'role-update-001', version: 1 },
-              }}
-            />
+            <JudgeResult result={LANDING_PASSED_RESULT} />
             <InterviewCards status="generated" questions={PREVIEW_QUESTIONS} />
           </div>
         </div>

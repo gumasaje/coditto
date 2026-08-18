@@ -1165,6 +1165,14 @@ a {
   font-weight: 500;
 }
 
+.suites {
+  margin: 0;
+}
+
+.suites .execution + .execution {
+  margin-top: 0;
+}
+
 .workspace-footer {
   display: flex;
   align-items: center;

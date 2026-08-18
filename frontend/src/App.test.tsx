@@ -44,13 +44,27 @@ const jsonResponse = (body: unknown, ok = true) => Promise.resolve({
   json: () => Promise.resolve(body),
 } as Response)
 
+const passedJudgeCheck = {
+  execution: 'TESTS_PASSED' as const,
+  suites: {
+    target: 'TESTS_PASSED' as const,
+    regression: 'TESTS_PASSED' as const,
+  },
+}
+
+const passedSubmission = {
+  runStatus: 'COMPLETED' as const,
+  check: passedJudgeCheck,
+  problem: { id: 'role-update-001', version: 1 },
+}
+
 function mockApi() {
   return vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
     const url = String(input)
     if (url === '/api/problems') return jsonResponse(catalog)
     if (url === '/api/problems/role-update-001') return jsonResponse(detail)
     if (url === '/api/submissions' && init?.method === 'POST') {
-      return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' }, problem: { id: 'role-update-001', version: 1 } })
+      return jsonResponse(passedSubmission)
     }
     if (url === '/api/interview-questions' && init?.method === 'POST') {
       return jsonResponse({ status: 'UNAVAILABLE', questions: [] })
@@ -73,6 +87,8 @@ describe('home', () => {
     expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
     expect(screen.getAllByText('src/main/java/com/coditto/demo/RoleService.java').length).toBeGreaterThan(0)
+    expect(screen.getByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
@@ -182,7 +198,8 @@ describe('catalog', () => {
     render(<App />)
     expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
-    expect(screen.getByText('TESTS_PASSED')).toBeInTheDocument()
+    expect(screen.getByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     expect(screen.getByText('approved가 false일 때 반환값을 바꾸면 안 되는 이유는 무엇인가요?')).toBeInTheDocument()
     expect(screen.getByText('두 분기가 같은 값을 반환하면 조건문은 어떤 의미가 없나요?')).toBeInTheDocument()
@@ -266,7 +283,13 @@ describe('workspace', () => {
         })
       }
       if (url === '/api/submissions' && init?.method === 'POST') {
-        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_FAILED' } })
+        return jsonResponse({
+          runStatus: 'COMPLETED',
+          check: {
+            execution: 'TESTS_FAILED',
+            suites: { target: 'TESTS_FAILED', regression: 'TESTS_PASSED' },
+          },
+        })
       }
       return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
     })
@@ -320,10 +343,10 @@ describe('workspace', () => {
   })
 
   it.each([
-    ['TESTS_PASSED'],
-    ['TESTS_FAILED'],
     ['COMPILE_FAILED'],
-  ])('displays execution %s exactly', async (execution) => {
+    ['TIMED_OUT'],
+    ['RESOURCE_LIMITED'],
+  ])('displays execution %s exactly when suites are omitted', async (execution) => {
     window.location.hash = '#/problems/role-update-001'
     vi.spyOn(window, 'fetch').mockImplementation((input) => {
       const url = String(input)
@@ -334,6 +357,42 @@ describe('workspace', () => {
     await screen.findByRole('button', { name: '제출하기' })
     fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
     expect(await screen.findByText(execution)).toBeInTheDocument()
+  })
+
+  it('splits target and regression suite results when present', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      return jsonResponse({
+        runStatus: 'COMPLETED',
+        check: {
+          execution: 'TESTS_FAILED',
+          suites: { target: 'TESTS_PASSED', regression: 'TESTS_FAILED' },
+        },
+      })
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 실패')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: '목표·회귀 테스트' })).toBeInTheDocument()
+    expect(screen.queryByText('TESTS_FAILED')).not.toBeInTheDocument()
+  })
+
+  it('keeps execution-only display when suites are omitted', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'COMPILE_FAILED' } })
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByText('COMPILE_FAILED')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: '목표·회귀 테스트' })).not.toBeInTheDocument()
   })
 
   it.each([
@@ -381,7 +440,7 @@ describe('workspace', () => {
     expect(screen.getByRole('button', { name: '채점 중…' })).toBeDisabled()
     fireEvent.submit(button.closest('form')!)
     expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/submissions')).toHaveLength(1)
-    resolveRequest({ ok: true, json: () => Promise.resolve({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } }) } as Response)
+    resolveRequest({ ok: true, json: () => Promise.resolve(passedSubmission) } as Response)
   })
 })
 
@@ -401,13 +460,15 @@ describe('interview cards', () => {
       const url = String(input)
       if (url === '/api/problems/role-update-001') return jsonResponse(detail)
       if (url === '/api/submissions' && init?.method === 'POST') {
-        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+        return jsonResponse(passedSubmission)
       }
       if (url === '/api/interview-questions' && init?.method === 'POST') return jsonResponse(generatedQuestions)
       return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
+    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
     expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
     expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
     expect(screen.getByText('null 입력이 안전한 이유를 설명해 보세요.')).toBeInTheDocument()
@@ -421,19 +482,22 @@ describe('interview cards', () => {
     }))
   })
 
-  it.each(['TESTS_FAILED', 'COMPILE_FAILED'])('does not call interview questions after %s', async (execution) => {
+  it.each([
+    ['TESTS_FAILED', { execution: 'TESTS_FAILED', suites: { target: 'TESTS_FAILED', regression: 'TESTS_PASSED' } }, '목표: 실패'],
+    ['COMPILE_FAILED', { execution: 'COMPILE_FAILED' }, 'COMPILE_FAILED'],
+  ] as const)('does not call interview questions after %s', async (_execution, check, visible) => {
     window.location.hash = '#/problems/role-update-001'
     const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
       const url = String(input)
       if (url === '/api/problems/role-update-001') return jsonResponse(detail)
       if (url === '/api/submissions' && init?.method === 'POST') {
-        return jsonResponse({ runStatus: 'COMPLETED', check: { execution } })
+        return jsonResponse({ runStatus: 'COMPLETED', check })
       }
       return jsonResponse({ status: 'GENERATED', questions: generatedQuestions.questions })
     })
     render(<App />)
     fireEvent.submit((await screen.findByRole('button', { name: '제출하기' })).closest('form')!)
-    expect(await screen.findByText(execution)).toBeInTheDocument()
+    expect(await screen.findByText(visible)).toBeInTheDocument()
     expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/interview-questions')).toHaveLength(0)
     expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
   })
@@ -444,13 +508,14 @@ describe('interview cards', () => {
       const url = String(input)
       if (url === '/api/problems/role-update-001') return jsonResponse(detail)
       if (url === '/api/submissions' && init?.method === 'POST') {
-        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+        return jsonResponse(passedSubmission)
       }
       return jsonResponse({ status: 'UNAVAILABLE', questions: [] })
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
-    expect(await screen.findByText('TESTS_PASSED')).toBeInTheDocument()
+    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('질문을 만드는 중…')).not.toBeInTheDocument())
     expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
   })
@@ -464,14 +529,15 @@ describe('interview cards', () => {
       const url = String(input)
       if (url === '/api/problems/role-update-001') return jsonResponse(detail)
       if (url === '/api/submissions' && init?.method === 'POST') {
-        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+        return jsonResponse(passedSubmission)
       }
       if (url === '/api/interview-questions' && init?.method === 'POST') return jsonResponse(generatedQuestions)
       return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
-    expect(await screen.findByText('TESTS_PASSED')).toBeInTheDocument()
+    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
     expect(screen.queryByText(/네트워크 오류/)).not.toBeInTheDocument()
     expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/interview-questions', expect.objectContaining({

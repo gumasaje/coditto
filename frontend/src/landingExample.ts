@@ -22,6 +22,18 @@ src/main/java/com/coditto/demo/RoleService.java
 `,
 } as const
 
+export const LANDING_PASSED_RESULT = {
+  runStatus: 'COMPLETED' as const,
+  check: {
+    execution: 'TESTS_PASSED' as const,
+    suites: {
+      target: 'TESTS_PASSED' as const,
+      regression: 'TESTS_PASSED' as const,
+    },
+  },
+  problem: { id: LANDING_PROBLEM.id, version: LANDING_PROBLEM.version },
+}
+
 export const ROLE_CHANGE_REQUEST = `package com.coditto.demo;
 
 public record RoleChangeRequest(String currentRole, String requestedRole, boolean approved) {
