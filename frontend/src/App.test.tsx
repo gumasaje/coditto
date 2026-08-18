@@ -152,6 +152,20 @@ describe('catalog', () => {
     expect(screen.getByText('선택한 조건에 맞는 문제가 없습니다.')).toBeInTheDocument()
   })
 
+  it('clears the category when the selected value is chosen again', async () => {
+    mockApi()
+    render(<App />)
+    await screen.findByRole('link', { name: /회원 권한 수정/ })
+    await userEvent.click(screen.getByRole('button', { name: '카테고리, 전체' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Back-End' }))
+    expect(screen.getByRole('button', { name: '카테고리, Back-End' })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/problems?category=Backend')
+    await userEvent.click(screen.getByRole('button', { name: '카테고리, Back-End' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Back-End' }))
+    expect(screen.getByRole('button', { name: '카테고리, 전체' })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/problems')
+  })
+
   it('opens a category from the workspace crumb', async () => {
     window.location.hash = '#/problems/role-update-001'
     mockApi()
