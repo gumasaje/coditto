@@ -70,9 +70,10 @@ describe('home', () => {
   it('sends the reader from the landing page to the problem catalog', async () => {
     mockApi()
     render(<App />)
-    expect(screen.getByRole('heading', { name: /코드를 읽는 것에서 끝나지 않고/ })).toBeInTheDocument()
-    expect(screen.getByText('문제의 유형과 코드를 확인한 뒤, 면접 카드를 보여줍니다.')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: '화면으로 보는 진행' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
+    expect(screen.getAllByText('src/main/java/com/coditto/demo/RoleService.java').length).toBeGreaterThan(0)
+    expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
   })
@@ -163,9 +164,9 @@ describe('catalog', () => {
     expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
     expect(screen.getByText('TESTS_PASSED')).toBeInTheDocument()
-    expect(screen.getByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
-    expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
-    expect(screen.getByText('null 입력이 안전한 이유를 설명해 보세요.')).toBeInTheDocument()
+    expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
+    expect(screen.getByText('approved가 false일 때 반환값을 바꾸면 안 되는 이유는 무엇인가요?')).toBeInTheDocument()
+    expect(screen.getByText('두 분기가 같은 값을 반환하면 조건문은 어떤 의미가 없나요?')).toBeInTheDocument()
   })
 
   it('opens the workspace for the selected problem', async () => {
