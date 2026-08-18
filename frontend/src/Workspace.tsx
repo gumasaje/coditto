@@ -27,7 +27,8 @@ export function Workspace({ problemId }: { problemId: string }) {
   const shellRef = useRef<HTMLDivElement>(null)
   const interviewSeq = useRef(0)
   const [problem, setProblem] = useState<ProblemDetail | null>(null)
-  const [source, setSource] = useState('')
+  const [files, setFiles] = useState<ProblemDetail['files']>([])
+  const [activePath, setActivePath] = useState('')
   const [result, setResult] = useState<JudgeResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -39,7 +40,8 @@ export function Workspace({ problemId }: { problemId: string }) {
   useEffect(() => {
     let cancelled = false
     setProblem(null)
-    setSource('')
+    setFiles([])
+    setActivePath('')
     setResult(null)
     setError(null)
     setInterviewStatus('idle')
@@ -54,7 +56,8 @@ export function Workspace({ problemId }: { problemId: string }) {
         }
         const editable = body.files.find((file) => file.editable) ?? body.files[0]
         setProblem(body)
-        setSource(editable?.content ?? '')
+        setFiles(body.files)
+        setActivePath(editable?.path ?? body.files[0]?.path ?? '')
       })
       .catch(() => {
         if (!cancelled) setError(NETWORK_ERROR)
@@ -108,14 +111,16 @@ export function Workspace({ problemId }: { problemId: string }) {
         body: JSON.stringify({
           problemId: problem.id,
           version: problem.version,
-          source,
+          source: (files.find((file) => file.editable) ?? files[0])?.content ?? '',
         }),
       })
       const body = await response.json() as JudgeResponse
       setResult(body)
+      const editable = problem.files.find((file) => file.editable) ?? problem.files[0]
+      const submitted = files.find((file) => file.path === editable?.path)?.content ?? ''
       if (body.check?.execution === 'TESTS_PASSED') markPassed(problem.id)
       if (shouldRequestInterview(body)) {
-        void loadInterview(seq, problem, source)
+        void loadInterview(seq, problem, submitted)
       }
     } catch {
       setError(NETWORK_ERROR)
@@ -155,8 +160,8 @@ export function Workspace({ problemId }: { problemId: string }) {
     )
   }
 
-  const editable = problem.files.find((file) => file.editable) ?? problem.files[0]
-  const editorLabel = editable?.path ?? '소스 코드'
+  const active = files.find((file) => file.path === activePath) ?? files[0]
+  const editable = files.find((file) => file.editable) ?? files[0]
 
   return (
     <form className="workspace" onSubmit={submit}>
@@ -185,7 +190,19 @@ export function Workspace({ problemId }: { problemId: string }) {
         </div>
         <SplitHandle axis="x" onDrag={dragX} />
         <div className="editor-col">
-          <EditorPane path={editorLabel} value={source} disabled={isSubmitting} onChange={setSource} />
+          <EditorPane
+            files={files}
+            activePath={active?.path ?? editable?.path ?? ''}
+            value={active?.content ?? ''}
+            disabled={isSubmitting}
+            readOnly={active ? !active.editable : true}
+            onSelectPath={setActivePath}
+            onChange={(next) => {
+              setFiles((current) => current.map((file) => (
+                file.path === activePath && file.editable ? { ...file, content: next } : file
+              )))
+            }}
+          />
           <SplitHandle axis="y" onDrag={dragY} />
           <div className="result-pane" style={{ height: resultHeight }}>
             <JudgeResult result={result} />

@@ -27,3 +27,12 @@ export function languageFromPath(path: string): string {
   if (path.endsWith('.js')) return 'JavaScript'
   return 'Source'
 }
+
+export function monacoLanguage(path: string): string {
+  if (path.endsWith('.java')) return 'java'
+  if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript'
+  if (path.endsWith('.js')) return 'javascript'
+  if (path.endsWith('.json')) return 'json'
+  if (path.endsWith('.xml') || path.endsWith('.html')) return 'xml'
+  return 'plaintext'
+}

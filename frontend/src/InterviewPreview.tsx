@@ -80,9 +80,16 @@ export function InterviewPreview() {
         <SplitHandle axis="x" onDrag={dragX} />
         <div className="editor-col">
           <EditorPane
-            path="src/main/java/com/coditto/demo/RoleService.java"
+            files={[{
+              path: 'src/main/java/com/coditto/demo/RoleService.java',
+              editable: true,
+              content: source,
+            }]}
+            activePath="src/main/java/com/coditto/demo/RoleService.java"
             value={source}
             disabled={false}
+            readOnly={false}
+            onSelectPath={() => undefined}
             onChange={setSource}
           />
           <SplitHandle axis="y" onDrag={dragY} />
