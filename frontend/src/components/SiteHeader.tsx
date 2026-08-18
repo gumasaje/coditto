@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { CodittoWordmark } from './CodittoMark'
 
 function focusMain() {
   const main = document.getElementById('main')
@@ -27,9 +28,8 @@ export function SiteHeader({
       <button type="button" className="skip" onClick={focusMain}>본문으로 건너뛰기</button>
       <header className="nav">
         <div className="nav-inner">
-          <a className="wordmark" href="#/">
-            <span className="wordmark-tile" />
-            <span className="wordmark-text">Coditto</span>
+          <a className="wordmark" href="#/" aria-label="Coditto">
+            <CodittoWordmark />
           </a>
           <span className="nav-sep" />
           <a

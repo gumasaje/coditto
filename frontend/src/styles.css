@@ -3,7 +3,7 @@
 
 @theme {
   --font-sans: Pretendard, "IBM Plex Sans KR", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", Pretendard, "IBM Plex Sans KR", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-void: #0d1b2a;
   --color-panel: #1b263b;
   --color-line: #415a77;
