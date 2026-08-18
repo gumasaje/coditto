@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import {
   LANDING_INTERVIEW_QUESTIONS,
+  LANDING_PASSED_RESULT,
   LANDING_PROBLEM,
   ROLE_SERVICE_BUGGY,
   ROLE_SERVICE_FIXED,
@@ -57,12 +58,6 @@ function ShotEditor({ source, markLine }: { source: string; markLine?: number })
   )
 }
 
-const passed = {
-  runStatus: 'COMPLETED' as const,
-  check: { execution: 'TESTS_PASSED' as const },
-  problem: { id: LANDING_PROBLEM.id, version: LANDING_PROBLEM.version },
-}
-
 /**
  * 랜딩 샷은 실제 작업공간 UI를 섹션 역할에 맞게 crop한다.
  */
@@ -93,7 +88,7 @@ export function HomeProductShot({
     return (
       <div className={className} aria-hidden="true">
         <div className="result-pane">
-          <JudgeResult result={passed} />
+          <JudgeResult result={LANDING_PASSED_RESULT} />
         </div>
       </div>
     )
