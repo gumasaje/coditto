@@ -173,6 +173,45 @@ describe('workspace', () => {
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
   })
 
+  it('switches files and keeps read-only context out of the submission source', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') {
+        return jsonResponse({
+          ...detail,
+          files: [
+            detail.files[0],
+            {
+              path: 'src/main/java/com/coditto/demo/Member.java',
+              editable: false,
+              content: 'class Member {}',
+            },
+          ],
+        })
+      }
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_FAILED' } })
+      }
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await screen.findByLabelText('src/main/java/com/coditto/demo/RoleService.java')
+    expect(screen.getByRole('navigation', { name: '프로젝트 파일' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Member\.java/ }))
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toHaveValue('class Member {}')
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: '제출하기' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/submissions', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({
+        problemId: 'role-update-001',
+        version: 1,
+        source: 'class RoleService {}',
+      }),
+    })))
+  })
+
   it('displays PROBLEM_NOT_FOUND without remapping', async () => {
     window.location.hash = '#/problems/unknown-problem'
     vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false))
