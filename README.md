@@ -92,6 +92,7 @@ in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확�
 
 ## 문서
 
+- [기여 및 협업 규칙](CONTRIBUTING.md)
 - [저장소 작업 규칙](AGENTS.md)
 - [기술 아키텍처](docs/ARCHITECTURE.md)
 - [Judge 입출력 명세](docs/contracts/judge.md)
