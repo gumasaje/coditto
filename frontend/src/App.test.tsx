@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
 const catalog = {
-  categories: ['Backend', 'Frontend', 'Data·AI'],
+  categories: ['Backend'],
   problems: [
     {
       id: 'role-update-001',
@@ -97,15 +97,14 @@ describe('catalog', () => {
     expect(screen.getAllByText('Easy').length).toBeGreaterThan(0)
   })
 
-  it('filters by category tabs and shows an empty state', async () => {
+  it('renders only categories returned by the catalog', async () => {
     mockApi()
     render(<App />)
     await screen.findByRole('link', { name: /회원 권한 수정/ })
-    await userEvent.click(screen.getByRole('tab', { name: 'Front-End' }))
-    expect(screen.getByText('이 카테고리에 준비된 문제가 없습니다.')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Back-End' }))
-    expect(screen.getByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '전체' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Back-End' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Front-End' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Data·AI' })).not.toBeInTheDocument()
   })
 
   it('groups catalog filters into stack, bug type, and difficulty', async () => {
