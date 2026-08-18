@@ -27,4 +27,4 @@ Follow [CONTRIBUTING.md](CONTRIBUTING.md) for Issue boundaries, branch names, wo
 
 ## Verification and handoff
 
-Run the narrowest relevant checks, then the full available suite, and always run `git diff --check` before handoff. Report changed behavior, commands actually run and their results, assumptions, remaining risks, and the smallest next implementation task.
+Run the narrowest relevant checks, then broaden verification in proportion to the changed boundary and risk as defined in [CONTRIBUTING.md](CONTRIBUTING.md). Do not require an end-to-end run for documentation or an isolated component change. Contract changes require provider-consumer integration checks; end-to-end verification is reserved for cross-component flow changes or closing the owning Issue. Runner isolation changes require the relevant Docker verification. Always run `git diff --check` before handoff. Report changed behavior, commands actually run and their results, assumptions, remaining risks, and the smallest next implementation task.
