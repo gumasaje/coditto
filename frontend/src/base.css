@@ -451,12 +451,21 @@ a {
   flex: 1;
 }
 
-.file-tree {
-  width: 13.5rem;
+.file-tree-pane {
+  display: flex;
+  min-width: 0;
+  height: 100%;
   flex-shrink: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.file-tree {
+  min-width: 0;
+  flex: 1;
   overflow: auto;
   padding: 8px 0;
-  border-right: 1px solid var(--line);
   background: var(--panel);
 }
 
@@ -511,10 +520,50 @@ a {
   background: var(--void);
 }
 
+.workspace,
+.workspace * {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4d45 #171816;
+}
+
+.workspace *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.workspace *::-webkit-scrollbar-track,
+.workspace *::-webkit-scrollbar-corner {
+  background: #171816;
+}
+
+.workspace *::-webkit-scrollbar-thumb {
+  background: #4a4d45;
+}
+
+.workspace *::-webkit-scrollbar-thumb:hover {
+  background: #8d8b82;
+}
+
 .editor-monaco .monaco-editor,
 .editor-monaco .monaco-editor-background,
 .editor-monaco .margin {
   background: #10110f;
+}
+
+.editor-monaco .monaco-scrollable-element > .scrollbar {
+  background: #10110f !important;
+}
+
+.editor-monaco .monaco-scrollable-element > .scrollbar > .slider {
+  background: #4a4d45 !important;
+}
+
+.editor-monaco .monaco-scrollable-element > .scrollbar > .slider:hover {
+  background: #8d8b82 !important;
+}
+
+.editor-monaco .decorationsOverviewRuler {
+  width: 0 !important;
 }
 
 .editor-loading {
@@ -770,7 +819,7 @@ a {
 
 .editor-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #3a3c36 transparent;
+  scrollbar-color: #4a4d45 #171816;
 }
 
 .split-col,

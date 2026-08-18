@@ -1,9 +1,10 @@
 import Editor, { Monaco } from '@monaco-editor/react'
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { languageFromPath, monacoLanguage } from '../copy'
 import { buildFileTree } from '../fileTree'
 import { ProblemFile } from '../types'
 import { FileTreeView } from './FileTreeView'
+import { SplitHandle } from './SplitHandle'
 
 const THEME = 'coditto'
 
@@ -32,7 +33,12 @@ function applyTheme(monaco: Monaco) {
       'editorWidget.background': '#171816',
       'editorWidget.border': '#2c2e29',
       'editorIndentGuide.background': '#2c2e29',
-      'scrollbarSlider.background': '#3a3c3688',
+      'editorOverviewRuler.background': '#10110f',
+      'editorOverviewRuler.border': '#10110f',
+      'scrollbar.shadow': '#00000000',
+      'scrollbarSlider.background': '#4a4d4599',
+      'scrollbarSlider.hoverBackground': '#8d8b82cc',
+      'scrollbarSlider.activeBackground': '#c8f00099',
     },
   })
 }
@@ -59,7 +65,15 @@ export function EditorPane({
   onChange: (value: string) => void
 }) {
   const tree = useMemo(() => buildFileTree(files), [files])
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const [treeWidth, setTreeWidth] = useState(216)
   const locked = disabled || readOnly
+
+  function dragTree(clientX: number) {
+    const rect = bodyRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setTreeWidth(Math.min(380, Math.max(132, clientX - rect.left)))
+  }
 
   return (
     <div className="editor-pane">
@@ -67,9 +81,14 @@ export function EditorPane({
         <label htmlFor="source" className="editor-path">{activePath}</label>
         <span className="lang">{languageFromPath(activePath)}{readOnly ? ' · 읽기 전용' : ''}</span>
       </div>
-      <div className="editor-body">
+      <div ref={bodyRef} className="editor-body">
         {files.length > 0 ? (
-          <FileTreeView nodes={tree} activePath={activePath} onSelect={onSelectPath} />
+          <>
+            <div className="file-tree-pane" style={{ width: treeWidth }}>
+              <FileTreeView nodes={tree} activePath={activePath} onSelect={onSelectPath} />
+            </div>
+            <SplitHandle axis="x" label="파일 트리 너비" onDrag={dragTree} />
+          </>
         ) : null}
         <div className="editor-monaco">
           <Editor
@@ -96,7 +115,13 @@ export function EditorPane({
               overviewRulerLanes: 0,
               hideCursorInOverviewRuler: true,
               padding: { top: 12, bottom: 12 },
-              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+              overviewRulerBorder: false,
+              scrollbar: {
+                verticalScrollbarSize: 10,
+                horizontalScrollbarSize: 10,
+                verticalSliderSize: 8,
+                horizontalSliderSize: 8,
+              },
               quickSuggestions: false,
               suggestOnTriggerCharacters: false,
               wordBasedSuggestions: 'off',
