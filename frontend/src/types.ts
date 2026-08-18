@@ -1,10 +1,16 @@
 export type Execution = 'TESTS_PASSED' | 'TESTS_FAILED' | 'COMPILE_FAILED' | 'TIMED_OUT' | 'RESOURCE_LIMITED'
+export type SuiteResult = 'TESTS_PASSED' | 'TESTS_FAILED'
+
+export type JudgeSuites = {
+  target: SuiteResult
+  regression: SuiteResult
+}
 
 export type JudgeResponse = {
   schemaVersion?: string
   problem?: { id?: string; version?: number }
   runStatus: 'COMPLETED' | 'REJECTED' | 'SYSTEM_FAILED'
-  check?: { id?: string; execution?: Execution }
+  check?: { id?: string; execution?: Execution; suites?: JudgeSuites }
   error?: { kind?: string }
 }
 

@@ -57,7 +57,7 @@ judge-runner/testdata/buggy/src/main/java/com/coditto/demo/RoleService.java     
 judge-runner/testdata/compile-error/src/main/java/com/coditto/demo/RoleService.java  → COMPILE_FAILED
 ```
 
-Phase C 실제 상태: Frontend는 문제 목록·카테고리 탭·작업공간에서 `problemId` 기반 제출을 사용하고, Monaco 에디터와 파일 트리·읽기 전용 문맥을 표시하며, `COMPLETED`/`TESTS_PASSED`일 때만 면접 질문 카드를 별도 호출합니다. Frontend 테스트와 production build가 통과했습니다. 이전 Backend·Runner 관통 검증에서 `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate가 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않으며, 목표/회귀 suites 화면 표시는 후속 Frontend 범위입니다.
+Phase C 실제 상태: Frontend는 문제 목록·카테고리 탭·작업공간에서 `problemId` 기반 제출을 사용하고, Monaco 에디터와 파일 트리·읽기 전용 문맥을 표시하며, `COMPLETED`/`TESTS_PASSED`일 때만 면접 질문 카드를 별도 호출합니다. 제출 결과는 `check.suites`가 있으면 목표/회귀를 나눠 보여 주고, 없으면 `execution`만 표시합니다. Frontend 테스트와 production build가 통과했습니다. 이전 Backend·Runner 관통 검증에서 `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate가 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
 
 ## Phase A 검증
 

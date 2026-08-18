@@ -336,6 +336,42 @@ describe('workspace', () => {
     expect(await screen.findByText(execution)).toBeInTheDocument()
   })
 
+  it('splits target and regression suite results when present', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      return jsonResponse({
+        runStatus: 'COMPLETED',
+        check: {
+          execution: 'TESTS_FAILED',
+          suites: { target: 'TESTS_PASSED', regression: 'TESTS_FAILED' },
+        },
+      })
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
+    expect(screen.getByText('회귀: 실패')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: '목표·회귀 테스트' })).toBeInTheDocument()
+    expect(screen.queryByText('TESTS_FAILED')).not.toBeInTheDocument()
+  })
+
+  it('keeps execution-only display when suites are omitted', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'COMPILE_FAILED' } })
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByText('COMPILE_FAILED')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: '목표·회귀 테스트' })).not.toBeInTheDocument()
+  })
+
   it.each([
     [{ runStatus: 'REJECTED', error: { kind: 'INVALID_SUBMISSION' } }],
     [{ runStatus: 'SYSTEM_FAILED', error: { kind: 'INFRA_ERROR' } }],
