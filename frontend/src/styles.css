@@ -48,21 +48,21 @@
   margin: 0;
   padding: 12px 8px;
   font: 13px/24px var(--font-mono), ui-monospace, monospace;
-  color: #8d8b82;
+  color: #778da9;
   text-align: right;
-  border-right: 1px solid #2c2e29;
+  border-right: 1px solid #2a3d54;
   overflow: hidden;
 }
 
 .editor-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #4a4d45 #171816;
+  scrollbar-color: #415a77 #1b263b;
 }
 
 .split-col,
 .split-row {
   flex-shrink: 0;
-  background: #2c2e29;
+  background: #2a3d54;
 }
 
 .split-col { width: 6px; cursor: col-resize; }

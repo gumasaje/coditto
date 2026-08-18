@@ -661,7 +661,7 @@ a {
 .workspace,
 .workspace * {
   scrollbar-width: thin;
-  scrollbar-color: #4a4d45 #171816;
+  scrollbar-color: #415a77 #1b263b;
 }
 
 .workspace *::-webkit-scrollbar {
@@ -671,33 +671,33 @@ a {
 
 .workspace *::-webkit-scrollbar-track,
 .workspace *::-webkit-scrollbar-corner {
-  background: #171816;
+  background: #1b263b;
 }
 
 .workspace *::-webkit-scrollbar-thumb {
-  background: #4a4d45;
+  background: #415a77;
 }
 
 .workspace *::-webkit-scrollbar-thumb:hover {
-  background: #8d8b82;
+  background: #778da9;
 }
 
 .editor-monaco .monaco-editor,
 .editor-monaco .monaco-editor-background,
 .editor-monaco .margin {
-  background: #10110f;
+  background: #0d1b2a;
 }
 
 .editor-monaco .monaco-scrollable-element > .scrollbar {
-  background: #10110f !important;
+  background: #0d1b2a !important;
 }
 
 .editor-monaco .monaco-scrollable-element > .scrollbar > .slider {
-  background: #4a4d45 !important;
+  background: #415a77 !important;
 }
 
 .editor-monaco .monaco-scrollable-element > .scrollbar > .slider:hover {
-  background: #8d8b82 !important;
+  background: #778da9 !important;
 }
 
 .editor-monaco .decorationsOverviewRuler {
@@ -945,8 +945,8 @@ a {
   margin: 0;
   padding: 12px 8px;
   overflow: hidden;
-  border-right: 1px solid #2c2e29;
-  color: #8d8b82;
+  border-right: 1px solid #2a3d54;
+  color: #778da9;
   font: 13px/24px var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -955,13 +955,13 @@ a {
 
 .editor-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #4a4d45 #171816;
+  scrollbar-color: #415a77 #1b263b;
 }
 
 .split-col,
 .split-row {
   flex-shrink: 0;
-  background: #2c2e29;
+  background: #2a3d54;
 }
 
 .split-col { width: 6px; cursor: col-resize; }
