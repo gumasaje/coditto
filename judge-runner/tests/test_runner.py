@@ -90,7 +90,7 @@ class RunnerContractTest(unittest.TestCase):
             source = workspace / "src/main/java/com/coditto/demo/RoleService.java"
             target_test = judge_tests / "target-tests/src/test/java/com/coditto/demo/RoleServiceTargetTest.java"
             regression_test = judge_tests / "regression-tests/src/test/java/com/coditto/demo/RoleServiceRegressionTest.java"
-            self.assertIn("return requestedRole", source.read_text(encoding="utf-8"))
+            self.assertIn("return request.requestedRole()", source.read_text(encoding="utf-8"))
             self.assertTrue(target_test.is_file())
             self.assertTrue(regression_test.is_file())
             self.assertFalse((workspace / "src/test").exists())

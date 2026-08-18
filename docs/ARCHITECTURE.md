@@ -32,7 +32,7 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 | `frontend/` | 문제 목록·작업공간·제출/결과·면접 카드, 이후 제품 UI | Phase C 목록·작업공간·Monaco·제출·면접 카드 구현 |
 | `backend/` | 문제 catalog와 Issue #1 Runner 어댑터, 독립 면접 질문 생성 API, 이후 session과 persistence | Phase B 문제 조회·problemId 제출·면접 질문 API 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
-| `problems/` | 공개 demo fixture, 두 PBL 문제와 problem-package 계약 | Phase A 및 Issue #6 구현 완료 |
+| `problems/` | 공개 demo fixture, 품질 검토된 Java·Spring 문제와 problem-package 계약 | Phase A, Issue #6 및 Issue #15 구현 |
 
 각 디렉터리는 의미 있는 구현 또는 설정이 생길 때만 만듭니다. Backend는 기동 시 `problems/`의 JSON 문법 `manifest.yaml`, statement와 명시적으로 공개된 base 파일을 검증해 immutable 인덱스를 만들며, 잘못된 패키지는 경고 로그를 남기고 제외합니다. 조회와 `POST /api/interview-questions`는 이 인덱스만 사용하고 `judge-only/` 자산을 읽거나 반환하지 않습니다. 면접 질문 요청은 candidate base와 source에서 unified diff를 만들고 statement·diff만 OpenAI Chat Completions에 전달하며, 빈 diff·key 미설정·provider 오류·timeout·출력 오류는 `UNAVAILABLE`으로 정규화한다. 이 경로는 Runner를 호출하지 않는다. `POST /api/submissions`는 최대 128 KiB raw JSON body의 필수 `problemId`, 선택 `version`, `source` 하나를 받아 게시된 문제의 candidate 계약을 검증한 뒤 `allowedPaths[0]`에 임시로 기록하고, API가 생성한 container name과 함께 별도 `python3 judge-runner/run.py` subprocess를 호출합니다. raw transport 상한은 JSON escaping으로 인한 byte 확장을 수용하기 위해 source 계약보다 크며, source 자체의 최대 16 KiB 상한을 완화하지 않습니다. API 프로세스는 제출 코드를 load 또는 실행하지 않으며 Runner diagnostics는 API response에 전달하지 않습니다. stdout가 정확히 한 줄의 계약 JSON이고 요청한 problem identity와 contract shape를 만족할 때만 이를 반환합니다. Runner 실행 실패·timeout·비계약 stdout은 `SYSTEM_FAILED`/`INFRA_ERROR`로 반환하며, terminal path마다 Python process tree와 해당 Judge container를 정리한 후 temporary candidate directory를 제거합니다. 배포 시 problem root와 Runner script path는 절대 경로 configuration으로 지정해야 합니다.
 
@@ -48,15 +48,18 @@ Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 정규화된 Do
 
 `judge-runner/verify_spike.py`는 Judge 이미지를 빌드한 뒤 네 candidate를 각각 3회 실행합니다. 기대한 `execution`과 `suites`, 정규화된 JSON의 반복 일치, test 상세 비노출, 실제 `--network none`과 mount 경계, non-root 이미지, 남은 container가 없는지를 함께 검사합니다.
 
-## Issue #6 공개 PBL 문제
+## 품질 검토된 공개 문제
 
-Issue #6은 공개 PBL 저장소의 검토된 버그 후보 두 개를 기존 problem-package와
-Runner 계약으로 게시합니다.
+Issue #6은 공개 PBL 저장소의 검토된 버그 후보를 기존 problem-package와 Runner
+계약으로 게시했고, Issue #15는 편집 파일 길이와 공개 프로젝트 문맥을 기준으로
+재평가했습니다. 기준과 교체 기록은
+[문제 콘텐츠 품질 문서](problem-quality-issue-15.md)가 소유합니다.
 
 - `member-list-exposure-001`은 인메모리 repository가 mutable 내부 목록을 노출하는
   버그이며 기존 Java/JUnit Judge 이미지를 재사용합니다.
-- `member-generation-validation-001`은 멤버 수정의 기수 검증 누락을 JPA와 H2
-  in-memory DB로 재현합니다. Spring/JPA/H2 의존성을 offline cache에 준비하는
+- `member-name-uniqueness-001`은 이름 변경의 중복 검증 누락을 JPA와 H2 in-memory
+  DB로 재현하며, 짧은 편집 파일과 관련 DTO·domain·repository·exception을 공개
+  문맥으로 제공합니다. Spring/JPA/H2 의존성을 offline cache에 준비하는
   `coditto/judge-java21-springboot:phase-a` sibling 이미지를 사용합니다.
 
 Runner는 두 문제에도 공통 `execute.sh`와 `judge_entrypoint.py`, 동일한 resource와
@@ -66,7 +69,8 @@ framework 분기를 추가하지 않습니다. 이 결정은
 
 `judge-runner/verify_pbl_problems.py`는 기존 Java image를 재빌드하지 않고 Spring
 image만 빌드한 뒤, 두 문제의 buggy/fixed candidate를 각각 3회 실행합니다.
-후보 검토 범위와 선택 근거는 [Issue #6 문제 후보 선정 기록](problem-selection-issue-6.md)에
+최초 후보 검토 범위는 [Issue #6 문제 후보 선정 기록](problem-selection-issue-6.md),
+현재 게시 기준은 [Issue #15 문제 콘텐츠 품질 기준](problem-quality-issue-15.md)에
 남깁니다.
 
 ## 공개 데모와 프로덕션 자산 경계

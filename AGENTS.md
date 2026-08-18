@@ -2,7 +2,7 @@
 
 ## Start here
 
-Before editing, read `README.md`, [the architecture](docs/ARCHITECTURE.md), and the contract or ADR relevant to the task. Inspect the working tree and filesystem; planned modules and examples are not proof of implementation.
+Before editing, read `README.md`, [the contribution workflow](CONTRIBUTING.md), [the architecture](docs/ARCHITECTURE.md), and the contract or ADR relevant to the task. Inspect the working tree and filesystem; planned modules and examples are not proof of implementation.
 
 When guidance conflicts, follow the user's current instruction, this file, the relevant contract or accepted ADR, then the architecture. Report a material conflict rather than silently choosing one.
 
@@ -21,6 +21,10 @@ When guidance conflicts, follow the user's current instruction, this file, the r
 
 Keep durable component boundaries in [the architecture](docs/ARCHITECTURE.md), Runner behavior in [the Judge input/output specification](docs/contracts/judge.md), and durable technical decisions in `docs/adr/`. Mark unresolved choices as `TODO` rather than fact.
 
+## GitHub workflow
+
+Follow [CONTRIBUTING.md](CONTRIBUTING.md) for Issue boundaries, branch names, work-unit commits, PR structure, link semantics, checklist evidence, review, and merge ownership. Keep one primary Issue per PR and do not mix unrelated cleanup. Use `Refs #N` while work or end-to-end verification remains; use `Closes #N` only when merging the PR satisfies every completion condition.
+
 ## Verification and handoff
 
-Run the narrowest relevant checks, then the full available suite, and always run `git diff --check` before handoff. Report changed behavior, commands actually run and their results, assumptions, remaining risks, and the smallest next implementation task.
+Run the narrowest relevant checks, then broaden verification in proportion to the changed boundary and risk as defined in [CONTRIBUTING.md](CONTRIBUTING.md). Do not require an end-to-end run for documentation or an isolated component change. Contract changes require provider-consumer integration checks; end-to-end verification is reserved for cross-component flow changes or closing the owning Issue. Runner isolation changes require the relevant Docker verification. Always run `git diff --check` before handoff. Report changed behavior, commands actually run and their results, assumptions, remaining risks, and the smallest next implementation task.

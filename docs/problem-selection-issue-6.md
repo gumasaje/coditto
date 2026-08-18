@@ -1,5 +1,10 @@
 # Issue #6 PBL 문제 후보 선정 기록
 
+> Issue #15 재평가에서 `member-generation-validation-001`은 편집 파일이 125줄이고
+> 필요한 프로젝트 문맥을 표시하지 못해 교체 대상으로 결정했습니다. 현재 게시
+> 기준과 대체 문제 선정 근거는 [Issue #15 문제 콘텐츠 품질 기준](problem-quality-issue-15.md)에
+> 있습니다. 아래 Spring Boot 절은 최초 선정 당시의 기록입니다.
+
 Issue #6의 두 문제는 공개 PBL 저장소를 정적으로 검토해 후보를 좁힌 뒤, 단일 수정
 파일, 20줄 이내 기준 패치, 기존 Judge 계약 재사용, 결정론적인 target/regression
 검증 가능성을 기준으로 선정했습니다.

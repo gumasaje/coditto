@@ -14,7 +14,8 @@
   },
   "display": {
     "files": [
-      "src/main/java/package2/MemoryMemberRepository.java"
+      "src/main/java/package2/MemoryMemberRepository.java",
+      "src/main/java/package2/MemberRepository.java"
     ]
   },
   "runtime": {

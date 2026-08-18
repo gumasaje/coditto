@@ -17,9 +17,11 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 문제 목록·작업공간·제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. Frontend는 이 계약으로 문제 목록과 작업공간을 채우고 선택한 `problemId`로 제출합니다. 작업공간 에디터는 Monaco이며 `files[].path` 트리와 `editable: false` 읽기 전용 문맥을 표시합니다. 별도 `POST /api/interview-questions`는 공개 statement와 submitted unified diff만 OpenAI에 전달해 질문 카드 세 개를 생성하며, key가 없거나 생성에 실패하면 Judge 경로와 독립적으로 `UNAVAILABLE`을 반환합니다. Frontend는 판정이 `COMPLETED`/`TESTS_PASSED`일 때만 이 endpoint를 호출하고, `UNAVAILABLE`이면 카드 영역만 접습니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
-Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제와 Spring Boot/JPA 문제를
-`problems/`에 추가했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고,
-Spring 문제는 같은 격리 경계를 공유하는 별도 dependency-cache image를 사용합니다.
+Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제를 `problems/`에 추가했고,
+Issue #15에서는 문제 품질 기준으로 기존 콘텐츠를 재평가했습니다. 일반 Java 문제는
+기존 Judge 이미지를 재사용하고, Spring 문제는 같은 격리 경계를 공유하는 별도
+dependency-cache image를 사용합니다. 기준과 교체 기록은
+[문제 콘텐츠 품질 문서](docs/problem-quality-issue-15.md)에 있습니다.
 
 ## Phase C 로컬 실행
 
@@ -69,7 +71,7 @@ python3 judge-runner/verify_spike.py
 
 전체 검증은 `--network none`, offline Gradle, target/regression 구분, test 상세 비노출, 정규화된 JSON의 반복 일치와 container cleanup도 함께 확인합니다.
 
-## Issue #6 PBL 문제 검증
+## 공개 문제 검증
 
 기존 Java Judge 이미지가 로컬에 있고 Docker Desktop의 Client와 Server가 실행 중인
 환경에서 다음 명령을 실행합니다. 검증기는 기존 Java 이미지를 재빌드하지 않고
@@ -79,7 +81,7 @@ Spring Boot/JPA/H2 sibling 이미지만 빌드합니다.
 python3 -B judge-runner/verify_pbl_problems.py
 ```
 
-`member-list-exposure-001`과 `member-generation-validation-001`의 buggy/fixed candidate를
+`member-list-exposure-001`과 `member-name-uniqueness-001`의 buggy/fixed candidate를
 각각 3회 실행해 `TESTS_FAILED`/`TESTS_PASSED`, target/regression suite, H2
 in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확인합니다.
 
@@ -92,6 +94,8 @@ in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확�
 
 ## 문서
 
+- [기여 및 협업 규칙](CONTRIBUTING.md)
 - [저장소 작업 규칙](AGENTS.md)
 - [기술 아키텍처](docs/ARCHITECTURE.md)
 - [Judge 입출력 명세](docs/contracts/judge.md)
+- [문제 콘텐츠 품질 기준과 재평가 기록](docs/problem-quality-issue-15.md)

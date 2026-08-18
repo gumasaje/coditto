@@ -3,10 +3,10 @@ diff --git a/src/main/java/com/coditto/demo/RoleService.java b/src/main/java/com
 +++ b/src/main/java/com/coditto/demo/RoleService.java
 @@ -3,7 +3,7 @@ package com.coditto.demo;
  public final class RoleService {
-     public String updateRole(String currentRole, String requestedRole, boolean approved) {
-         if (approved) {
--            return currentRole;
-+            return requestedRole;
+     public String updateRole(RoleChangeRequest request) {
+         if (request.approved()) {
+-            return request.currentRole();
++            return request.requestedRole();
          }
-         return currentRole;
+         return request.currentRole();
      }
