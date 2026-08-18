@@ -7,10 +7,6 @@
 제공된 두 repository의 역할을 확인하고, 과제를 조회하기 전에 멤버 존재 여부를
 검증하세요. 존재하는 멤버의 빈 목록과 기존 과제 조회 동작은 보존해야 합니다.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
-```
+수정 가능한 파일은 `AssignmentService.java` 하나뿐입니다.
 
 Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

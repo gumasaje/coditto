@@ -9,10 +9,6 @@
 않아야 합니다. 읽기 전용 `MemberRepository` 인터페이스에서 조회 계약을 확인하고,
 저장, 이름 조회, 중복 검사와 파트별 조회의 기존 동작도 유지하세요.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/package2/MemoryMemberRepository.java
-```
+수정 가능한 파일은 `MemoryMemberRepository.java` 하나뿐입니다.
 
 Java 21과 제공된 Gradle/JUnit 테스트를 사용해 동작을 수정하세요.

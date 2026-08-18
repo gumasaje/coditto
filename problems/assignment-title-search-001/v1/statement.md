@@ -7,10 +7,6 @@
 제공된 repository 계약을 확인해 부분 검색에 맞는 조회 메서드를 사용하세요. 제목
 전체가 검색어와 같은 경우와 일치하는 과제가 없는 경우의 기존 동작도 보존해야 합니다.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
-```
+수정 가능한 파일은 `AssignmentService.java` 하나뿐입니다.
 
 Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

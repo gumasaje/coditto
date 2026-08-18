@@ -7,10 +7,6 @@
 유효하지 않은 값은 객체 생성 중 `IllegalArgumentException`으로 거부하고, 유효한
 객체 생성과 명시적인 `validate()` 호출은 기존처럼 동작하도록 수정하세요.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/package1/Lion.java
-```
+수정 가능한 파일은 `Lion.java` 하나뿐입니다.
 
 Java 21과 JUnit 5 기반 공식 테스트로 동작을 검증합니다.

@@ -7,10 +7,6 @@
 멤버를 변경할 때의 기존 예외도 보존해야 합니다. 제공된 DTO, domain, repository와
 예외 타입을 살펴보고 서비스의 이름 변경 로직을 수정하세요.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/likelion/springboot/member/service/MemberService.java
-```
+수정 가능한 파일은 `MemberService.java` 하나뿐입니다.
 
 Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

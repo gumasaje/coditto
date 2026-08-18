@@ -7,10 +7,6 @@
 두 쓰기 메서드는 `UnsupportedOperationException`을 던져 요청을 명확히 거부해야
 합니다. 저장소의 기존 더미 데이터와 모든 조회 동작은 그대로 보존하세요.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/bonus/MockMemberRepository.java
-```
+수정 가능한 파일은 `MockMemberRepository.java` 하나뿐입니다.
 
 Java 21과 JUnit 5 기반 공식 테스트로 동작을 검증합니다.
