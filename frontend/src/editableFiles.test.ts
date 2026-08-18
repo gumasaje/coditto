@@ -61,8 +61,35 @@ describe('withoutEditableFileGuidance', () => {
     ].join('\n'))
   })
 
+  it('removes the published inline filename guidance from display', () => {
+    const source = [
+      '# 역할 변경 승인 버그',
+      '',
+      '`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.',
+      '',
+      '수정 가능한 파일은 `RoleService.java` 하나뿐입니다.',
+      '',
+      'Java 21로 검증하세요.',
+      '',
+    ].join('\n')
+
+    expect(withoutEditableFileGuidance(source, [path])).toBe([
+      '# 역할 변경 승인 버그',
+      '',
+      '`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.',
+      '',
+      'Java 21로 검증하세요.',
+      '',
+    ].join('\n'))
+  })
+
   it('leaves unrelated code fences in place', () => {
     const source = '# 제목\n\n```text\nnot-a-path\n```\n'
+    expect(withoutEditableFileGuidance(source, [path])).toBe(source)
+  })
+
+  it('leaves inline guidance that names a file outside the editable set', () => {
+    const source = '수정 가능한 파일은 `Secret.java` 하나뿐입니다.\n'
     expect(withoutEditableFileGuidance(source, [path])).toBe(source)
   })
 })

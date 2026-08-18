@@ -20,7 +20,7 @@ export function editableFilePaths(detail: {
 const GUIDANCE_LINE = /^수정 가능한 파일은.+$/
 
 /**
- * 지문 원문은 바꾸지 않고, 화면에서만 경로 안내 fence를 공통 배지 UI에 맡긴다.
+ * 지문 원문은 바꾸지 않고, 화면에서만 인라인 파일명 안내와 경로 fence를 공통 배지 UI에 맡긴다.
  */
 export function withoutEditableFileGuidance(source: string, paths: string[]): string {
   if (paths.length === 0) return source
@@ -29,11 +29,18 @@ export function withoutEditableFileGuidance(source: string, paths: string[]): st
   const out: string[] = []
   let index = 0
 
+  const names = new Set(paths.map(fileNameFromPath))
+
   while (index < lines.length) {
-    if (GUIDANCE_LINE.test(lines[index].trim())) {
+    const trimmed = lines[index].trim()
+    if (GUIDANCE_LINE.test(trimmed)) {
       const skipped = skipGuidanceFence(lines, index + 1, pathSet)
       if (skipped != null) {
         index = skipped
+        continue
+      }
+      if (isInlineEditableFileGuidance(trimmed, names, pathSet)) {
+        index += 1
         continue
       }
     }
@@ -51,6 +58,11 @@ export function withoutEditableFileGuidance(source: string, paths: string[]): st
   return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, (match, offset) => (
     offset === 0 ? match : '\n'
   ))
+}
+
+function isInlineEditableFileGuidance(line: string, names: Set<string>, pathSet: Set<string>): boolean {
+  const mentioned = [...line.matchAll(/`([^`]+)`/g)].map((match) => match[1])
+  return mentioned.length > 0 && mentioned.every((name) => names.has(name) || pathSet.has(name))
 }
 
 function skipGuidanceFence(lines: string[], start: number, pathSet: Set<string>): number | null {

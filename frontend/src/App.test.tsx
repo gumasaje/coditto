@@ -26,7 +26,7 @@ const detail = {
   category: 'Backend',
   difficulty: 'EASY',
   estimatedMinutes: 30,
-  statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n```text\nsrc/main/java/com/coditto/demo/RoleService.java\n```\n',
+  statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n수정 가능한 파일은 `RoleService.java` 하나뿐입니다.\n',
   files: [{
     path: 'src/main/java/com/coditto/demo/RoleService.java',
     editable: true,
@@ -194,6 +194,7 @@ describe('workspace', () => {
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
     const badge = within(screen.getByRole('group', { name: '수정 가능한 파일' })).getByRole('button', { name: 'RoleService.java' })
     expect(badge).toHaveAttribute('title', 'src/main/java/com/coditto/demo/RoleService.java')
+    expect(screen.queryByText(/수정 가능한 파일은/)).not.toBeInTheDocument()
     expect(screen.queryByText('src/main/java/com/coditto/demo/RoleService.java', { selector: 'code' })).not.toBeInTheDocument()
   })
 
