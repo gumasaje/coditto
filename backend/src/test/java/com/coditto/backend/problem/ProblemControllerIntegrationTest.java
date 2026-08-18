@@ -18,42 +18,109 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProblemControllerIntegrationTest {
-    private static final Map<String, List<String>> DISPLAY_FILES = Map.of(
-            "member-list-exposure-001", List.of(
+    private static final Map<String, List<String>> DISPLAY_FILES = Map.ofEntries(
+            Map.entry("assignment-member-existence-001", List.of(
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java",
+                    "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java")),
+            Map.entry("assignment-title-search-001", List.of(
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java",
+                    "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java",
+                    "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java")),
+            Map.entry("assignment-title-validation-001", List.of(
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java",
+                    "src/main/java/com/likelion/springboot/assignment/dto/AssignmentCreateRequest.java",
+                    "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/global/exception/InvalidAssignmentRequestException.java")),
+            Map.entry("lion-constructor-validation-001", List.of(
+                    "src/main/java/package1/Lion.java")),
+            Map.entry("lion-update-role-validation-001", List.of(
+                    "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+                    "src/main/java/com/likelion/springboot/member/dto/LionUpdateRequest.java",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/member/domain/RoleType.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/global/exception/InvalidMemberRequestException.java",
+                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java")),
+            Map.entry("member-assignment-cascade-delete-001", List.of(
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java")),
+            Map.entry("member-list-exposure-001", List.of(
                     "src/main/java/package2/MemoryMemberRepository.java",
-                    "src/main/java/package2/MemberRepository.java"),
-            "member-name-uniqueness-001", List.of(
+                    "src/main/java/package2/MemberRepository.java")),
+            Map.entry("member-name-uniqueness-001", List.of(
                     "src/main/java/com/likelion/springboot/member/service/MemberService.java",
                     "src/main/java/com/likelion/springboot/member/dto/MemberRenameRequest.java",
                     "src/main/java/com/likelion/springboot/member/domain/Member.java",
                     "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
                     "src/main/java/com/likelion/springboot/global/exception/DuplicateMemberException.java",
-                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java"),
-            "role-update-001", List.of(
+                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java")),
+            Map.entry("member-part-index-delete-001", List.of(
+                    "src/main/java/bonus/MemoryMemberRepository.java",
+                    "src/main/java/bonus/MemberRepository.java",
+                    "src/main/java/role/Role.java",
+                    "src/main/java/role/Lion.java")),
+            Map.entry("mock-repository-write-guard-001", List.of(
+                    "src/main/java/bonus/MockMemberRepository.java",
+                    "src/main/java/bonus/MemberRepository.java",
+                    "src/main/java/role/Role.java",
+                    "src/main/java/role/Lion.java",
+                    "src/main/java/role/Staff.java")),
+            Map.entry("role-update-001", List.of(
                     "src/main/java/com/coditto/demo/RoleService.java",
-                    "src/main/java/com/coditto/demo/RoleChangeRequest.java"));
-    private static final Map<String, String> EDITABLE_FILES = Map.of(
-            "member-list-exposure-001",
-            "src/main/java/package2/MemoryMemberRepository.java",
-            "member-name-uniqueness-001",
-            "src/main/java/com/likelion/springboot/member/service/MemberService.java",
-            "role-update-001",
-            "src/main/java/com/coditto/demo/RoleService.java");
+                    "src/main/java/com/coditto/demo/RoleChangeRequest.java")),
+            Map.entry("submission-policy-conjunction-001", List.of(
+                    "src/main/java/role/Role.java",
+                    "src/main/java/role/Lion.java",
+                    "src/main/java/role/Staff.java",
+                    "src/main/java/policy/SubmissionPolicy.java",
+                    "src/main/java/policy/GenerationSubmissionPolicy.java",
+                    "src/main/java/policy/LionSubmissionPolicy.java",
+                    "src/main/java/policy/StaffSubmissionPolicy.java")));
+    private static final Map<String, String> EDITABLE_FILES = Map.ofEntries(
+            Map.entry("assignment-member-existence-001",
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java"),
+            Map.entry("assignment-title-search-001",
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java"),
+            Map.entry("assignment-title-validation-001",
+                    "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java"),
+            Map.entry("lion-constructor-validation-001", "src/main/java/package1/Lion.java"),
+            Map.entry("lion-update-role-validation-001",
+                    "src/main/java/com/likelion/springboot/member/service/MemberService.java"),
+            Map.entry("member-assignment-cascade-delete-001",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java"),
+            Map.entry("member-list-exposure-001", "src/main/java/package2/MemoryMemberRepository.java"),
+            Map.entry("member-name-uniqueness-001",
+                    "src/main/java/com/likelion/springboot/member/service/MemberService.java"),
+            Map.entry("member-part-index-delete-001", "src/main/java/bonus/MemoryMemberRepository.java"),
+            Map.entry("mock-repository-write-guard-001", "src/main/java/bonus/MockMemberRepository.java"),
+            Map.entry("role-update-001", "src/main/java/com/coditto/demo/RoleService.java"),
+            Map.entry("submission-policy-conjunction-001", "src/main/java/role/Role.java"));
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     void lists_all_published_problems_in_deterministic_order() throws Exception {
-        mockMvc.perform(get("/api/problems"))
+        var responseBuilder = mockMvc.perform(get("/api/problems"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categories[0]").value("Backend"))
                 .andExpect(jsonPath("$.categories[1]").value("Frontend"))
                 .andExpect(jsonPath("$.categories[2]").value("Data·AI"))
-                .andExpect(jsonPath("$.problems.length()").value(3))
-                .andExpect(jsonPath("$.problems[0].id").value("member-list-exposure-001"))
-                .andExpect(jsonPath("$.problems[1].id").value("member-name-uniqueness-001"))
-                .andExpect(jsonPath("$.problems[2].id").value("role-update-001"));
+                .andExpect(jsonPath("$.problems.length()").value(DISPLAY_FILES.size()));
+
+        List<String> sortedIds = DISPLAY_FILES.keySet().stream().sorted().toList();
+        for (int index = 0; index < sortedIds.size(); index++) {
+            responseBuilder.andExpect(jsonPath("$.problems[" + index + "].id").value(sortedIds.get(index)));
+        }
     }
 
     @Test
