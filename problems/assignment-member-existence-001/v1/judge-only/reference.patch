@@ -1,0 +1,10 @@
+diff --git a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+--- a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
++++ b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+@@ -4,0 +5 @@
++import com.likelion.springboot.global.exception.MemberNotFoundException;
+@@ -25,0 +27,4 @@
++        if (!memberRepository.existsById(memberId)) {
++            throw new MemberNotFoundException("해당 멤버를 찾을 수 없습니다. id: " + memberId);
++        }
++

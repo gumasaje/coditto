@@ -1,0 +1,16 @@
+# 멤버별 과제 조회의 상위 리소스 검증 누락
+
+멤버별 과제 조회는 존재하는 멤버에게 과제가 없으면 빈 목록을 반환해야 하지만,
+멤버 자체가 없으면 `MemberNotFoundException`으로 구분해야 합니다. 현재 구현은 두
+경우 모두 빈 목록을 반환해 잘못된 멤버 ID를 알아차릴 수 없습니다.
+
+제공된 두 repository의 역할을 확인하고, 과제를 조회하기 전에 멤버 존재 여부를
+검증하세요. 존재하는 멤버의 빈 목록과 기존 과제 조회 동작은 보존해야 합니다.
+
+수정 가능한 파일은 다음 하나뿐입니다.
+
+```text
+src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+```
+
+Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.
