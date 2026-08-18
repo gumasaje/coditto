@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,11 +18,25 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProblemControllerIntegrationTest {
-    private static final Map<String, String> DISPLAY_FILES = Map.of(
-            "member-generation-validation-001",
-            "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+    private static final Map<String, List<String>> DISPLAY_FILES = Map.of(
+            "member-list-exposure-001", List.of(
+                    "src/main/java/package2/MemoryMemberRepository.java",
+                    "src/main/java/package2/MemberRepository.java"),
+            "member-name-uniqueness-001", List.of(
+                    "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+                    "src/main/java/com/likelion/springboot/member/dto/MemberRenameRequest.java",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/global/exception/DuplicateMemberException.java",
+                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java"),
+            "role-update-001", List.of(
+                    "src/main/java/com/coditto/demo/RoleService.java",
+                    "src/main/java/com/coditto/demo/RoleChangeRequest.java"));
+    private static final Map<String, String> EDITABLE_FILES = Map.of(
             "member-list-exposure-001",
             "src/main/java/package2/MemoryMemberRepository.java",
+            "member-name-uniqueness-001",
+            "src/main/java/com/likelion/springboot/member/service/MemberService.java",
             "role-update-001",
             "src/main/java/com/coditto/demo/RoleService.java");
 
@@ -36,31 +51,41 @@ class ProblemControllerIntegrationTest {
                 .andExpect(jsonPath("$.categories[1]").value("Frontend"))
                 .andExpect(jsonPath("$.categories[2]").value("Data·AI"))
                 .andExpect(jsonPath("$.problems.length()").value(3))
-                .andExpect(jsonPath("$.problems[0].id").value("member-generation-validation-001"))
-                .andExpect(jsonPath("$.problems[1].id").value("member-list-exposure-001"))
+                .andExpect(jsonPath("$.problems[0].id").value("member-list-exposure-001"))
+                .andExpect(jsonPath("$.problems[1].id").value("member-name-uniqueness-001"))
                 .andExpect(jsonPath("$.problems[2].id").value("role-update-001"));
     }
 
     @Test
     void returns_each_problem_detail_from_the_startup_index_without_hidden_assets() throws Exception {
-        for (Map.Entry<String, String> entry : DISPLAY_FILES.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : DISPLAY_FILES.entrySet()) {
             String problemId = entry.getKey();
-            String displayPath = entry.getValue();
-            String expectedContent = Files.readString(Path.of("../problems", problemId, "v1", "base", displayPath));
+            List<String> displayPaths = entry.getValue();
+            String editablePath = EDITABLE_FILES.get(problemId);
             String expectedStatement = Files.readString(Path.of("../problems", problemId, "v1", "statement.md"));
 
-            String response = mockMvc.perform(get("/api/problems/{problemId}", problemId))
+            var responseBuilder = mockMvc.perform(get("/api/problems/{problemId}", problemId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(problemId))
                     .andExpect(jsonPath("$.version").value(1))
                     .andExpect(jsonPath("$.statement").value(expectedStatement))
-                    .andExpect(jsonPath("$.files.length()").value(1))
-                    .andExpect(jsonPath("$.files[0].path").value(displayPath))
-                    .andExpect(jsonPath("$.files[0].editable").value(true))
-                    .andExpect(jsonPath("$.files[0].content").value(expectedContent))
-                    .andExpect(jsonPath("$.candidate.allowedPaths[0]").value(displayPath))
+                    .andExpect(jsonPath("$.files.length()").value(displayPaths.size()))
+                    .andExpect(jsonPath("$.candidate.allowedPaths[0]").value(editablePath))
                     .andExpect(jsonPath("$.candidate.maxFiles").value(1))
-                    .andExpect(jsonPath("$.candidate.maxBytes").value(16384))
+                    .andExpect(jsonPath("$.candidate.maxBytes").value(16384));
+
+            for (int index = 0; index < displayPaths.size(); index++) {
+                String displayPath = displayPaths.get(index);
+                String expectedContent = Files.readString(
+                        Path.of("../problems", problemId, "v1", "base", displayPath));
+                responseBuilder
+                        .andExpect(jsonPath("$.files[" + index + "].path").value(displayPath))
+                        .andExpect(jsonPath("$.files[" + index + "].editable")
+                                .value(displayPath.equals(editablePath)))
+                        .andExpect(jsonPath("$.files[" + index + "].content").value(expectedContent));
+            }
+
+            String response = responseBuilder
                     .andReturn()
                     .getResponse()
                     .getContentAsString();

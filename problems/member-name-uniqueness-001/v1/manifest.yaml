@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "member-name-uniqueness-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "멤버 이름 변경 후 중복 이름이 생겨요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "중복 검증",
+    "estimatedMinutes": 30,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+      "src/main/java/com/likelion/springboot/member/dto/MemberRenameRequest.java",
+      "src/main/java/com/likelion/springboot/member/domain/Member.java",
+      "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+      "src/main/java/com/likelion/springboot/global/exception/DuplicateMemberException.java",
+      "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-springboot:phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/likelion/springboot/member/service/MemberService.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

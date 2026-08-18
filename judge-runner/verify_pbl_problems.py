@@ -26,16 +26,16 @@ PROBLEMS = {
             "preservesSaveLookupDuplicateAndPartIndexBehavior",
         ),
     },
-    "member-generation-validation-001": {
+    "member-name-uniqueness-001": {
         "version": 1,
         "forbiddenDetails": (
-            "MemberServiceUpdateValidationTargetTest",
-            "MemberServiceUpdateRegressionTest",
-            "rejectsNonPositiveGenerationBeforeUpdatingLion",
-            "rejectsNonPositiveGenerationBeforeUpdatingStaff",
+            "MemberServiceRenameTargetTest",
+            "MemberServiceRenameRegressionTest",
+            "rejectsANameAlreadyUsedByAnotherMember",
             "usesAnInMemoryH2DataSource",
-            "preservesValidLionUpdates",
-            "preservesValidStaffUpdates",
+            "allowsKeepingTheCurrentName",
+            "persistsAnUnusedName",
+            "preservesTheNotFoundBehavior",
         ),
     },
 }
@@ -155,7 +155,7 @@ def assert_no_forbidden_output(output: str, problem_id: str) -> None:
 
 
 def assert_spring_package_uses_only_h2() -> None:
-    problem_dir = REPOSITORY_ROOT / "problems/member-generation-validation-001/v1"
+    problem_dir = REPOSITORY_ROOT / "problems/member-name-uniqueness-001/v1"
     build_text = (problem_dir / "base/build.gradle").read_text(encoding="utf-8").lower()
     if "testimplementation 'com.h2database:h2'" not in build_text:
         raise RuntimeError("Spring problem does not declare H2 as a test dependency")
@@ -173,7 +173,7 @@ def assert_spring_package_uses_only_h2() -> None:
     regression = (
         problem_dir
         / "judge-only/regression-tests/src/test/java/com/likelion/springboot/member/service"
-        / "MemberServiceUpdateRegressionTest.java"
+        / "MemberServiceRenameRegressionTest.java"
     ).read_text(encoding="utf-8")
     if "jdbc:h2:mem:" not in regression:
         raise RuntimeError("Spring regression suite does not assert the H2 in-memory JDBC URL")
@@ -232,7 +232,7 @@ def verify_problem(problem_id: str) -> dict[str, Any]:
             assert_isolated_command(result.stderr, label)
             combined_output = result.stdout + result.stderr
             assert_no_forbidden_output(combined_output, problem_id)
-            if problem_id == "member-generation-validation-001":
+            if problem_id == "member-name-uniqueness-001":
                 assert_no_external_database_markers(combined_output, label)
             observed.append(parsed)
 
@@ -261,7 +261,7 @@ def main() -> int:
     java_image = java_manifest["runtime"]["image"]
     java_image_id_before, _ = inspect_image(java_image)
 
-    spring_manifest = load_manifest(REPOSITORY_ROOT / "problems/member-generation-validation-001/v1")
+    spring_manifest = load_manifest(REPOSITORY_ROOT / "problems/member-name-uniqueness-001/v1")
     spring_image = spring_manifest["runtime"]["image"]
     build_started = time.perf_counter()
     build = run(
