@@ -18,16 +18,18 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 문제 목록·작업공간·제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. Frontend는 이 계약으로 문제 목록과 작업공간을 채우고 선택한 `problemId`로 제출합니다. 작업공간 에디터는 Monaco이며 `files[].path` 트리와 `editable: false` 읽기 전용 문맥을 표시합니다. 별도 `POST /api/interview-questions`는 공개 statement와 submitted unified diff만 OpenAI에 전달해 질문 카드 세 개를 생성하며, key가 없거나 생성에 실패하면 Judge 경로와 독립적으로 `UNAVAILABLE`을 반환합니다. Frontend는 판정이 `COMPLETED`/`TESTS_PASSED`일 때만 이 endpoint를 호출하고, `UNAVAILABLE`이면 카드 영역만 접습니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
 Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제를 `problems/`에 추가했고,
-Issue #15에서는 문제 품질 기준으로 기존 콘텐츠를 재평가했습니다. 일반 Java 문제는
-기존 Judge 이미지를 재사용하고, Spring 문제는 같은 격리 경계를 공유하는 별도
-dependency-cache image를 사용합니다. 기준과 교체 기록은
-[문제 콘텐츠 품질 문서](docs/problem-quality-issue-15.md)에 있습니다.
+Issue #15에서는 문제 품질 기준으로 기존 콘텐츠를 재평가했습니다. Issue #27에서는
+같은 두 저장소의 원본 동작, 주차별 단계 차이와 검토된 회귀를 다시 검토해 공개 PBL
+문제를 11개로 확장했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고, Spring
+문제는 같은 격리 경계를 공유하는 별도 dependency-cache image를 사용합니다. 기준과
+교체 기록은 [문제 콘텐츠 품질 문서](docs/problem-quality-issue-15.md), 확장 후보와 출처는
+[Issue #27 문제 선정 기록](docs/problem-selection-issue-27.md)에 있습니다.
 
 ## Phase C 로컬 실행
 
 아래 명령은 각 component 실행용입니다. Frontend는 문제 목록에서 문제를 고른 뒤 작업공간에서 제출합니다.
 
-Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.6.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
+Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.7.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
 
 ```bash
 # Backend 테스트와 실행
@@ -81,9 +83,10 @@ Spring Boot/JPA/H2 sibling 이미지만 빌드합니다.
 python3 -B judge-runner/verify_pbl_problems.py
 ```
 
-`member-list-exposure-001`과 `member-name-uniqueness-001`의 buggy/fixed candidate를
-각각 3회 실행해 `TESTS_FAILED`/`TESTS_PASSED`, target/regression suite, H2
-in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확인합니다.
+공개 PBL 문제 11개의 buggy/fixed candidate를 각각 3회, 총 66회 실행해
+`TESTS_FAILED`/`TESTS_PASSED`, target/regression suite, H2 in-memory 사용,
+`--network none`, non-root 실행, 공식 테스트 상세 비노출과 container cleanup을
+확인합니다.
 
 ## 향후 방향
 
@@ -99,3 +102,4 @@ in-memory 사용, `--network none`, non-root 실행과 container cleanup을 확�
 - [기술 아키텍처](docs/ARCHITECTURE.md)
 - [Judge 입출력 명세](docs/contracts/judge.md)
 - [문제 콘텐츠 품질 기준과 재평가 기록](docs/problem-quality-issue-15.md)
+- [Issue #27 PBL 문제 선정 기록](docs/problem-selection-issue-27.md)
