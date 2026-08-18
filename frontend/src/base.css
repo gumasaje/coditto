@@ -62,17 +62,29 @@ a {
 
 .skip {
   position: absolute;
-  left: -9999px;
   top: 0;
+  left: 0;
   z-index: 10;
+  transform: translateY(-120%);
+  margin: 0;
+  border: 0;
   padding: 10px 18px;
   background: var(--alabaster-grey);
   color: var(--ink-black);
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.skip:focus { left: 0; }
+.skip:focus {
+  transform: none;
+}
+
+#main:focus {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
 
 .visually-hidden {
   position: absolute;

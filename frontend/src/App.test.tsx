@@ -202,8 +202,18 @@ describe('workspace', () => {
     await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
     const main = screen.getByRole('main')
     expect(main).toHaveAttribute('id', 'main')
-    await userEvent.click(screen.getByRole('link', { name: '본문으로 건너뛰기' }))
-    expect(main).toHaveFocus()
+    await userEvent.click(screen.getByRole('button', { name: '본문으로 건너뛰기' }))
+    await waitFor(() => expect(main).toHaveFocus())
+  })
+
+  it('moves focus to the interview preview main landmark from the skip control', async () => {
+    window.location.hash = '#/preview/interview'
+    render(<App />)
+    await screen.findByLabelText('면접 질문')
+    const main = screen.getByRole('main')
+    expect(main).toHaveAttribute('id', 'main')
+    await userEvent.keyboard('{Tab}{Enter}')
+    await waitFor(() => expect(main).toHaveFocus())
   })
 
   it('focuses the editor when the file path control is clicked', async () => {

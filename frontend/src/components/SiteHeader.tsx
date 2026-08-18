@@ -1,4 +1,14 @@
-import { MouseEvent, ReactNode } from 'react'
+import { ReactNode } from 'react'
+
+function focusMain() {
+  const main = document.getElementById('main')
+  if (!(main instanceof HTMLElement)) return
+  main.tabIndex = -1
+  main.focus()
+  window.setTimeout(() => {
+    if (document.activeElement !== main) main.focus()
+  }, 0)
+}
 
 /**
  * 프로토타입 내비: 워드마크, 문제 링크, 작업공간에서는 크럼을 오른쪽에 둔다.
@@ -12,16 +22,9 @@ export function SiteHeader({
   center?: ReactNode
   trailing?: ReactNode
 }) {
-  function skip(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault()
-    const main = document.getElementById('main')
-    if (!main) return
-    main.focus()
-  }
-
   return (
     <>
-      <a className="skip" href="#main" onClick={skip}>본문으로 건너뛰기</a>
+      <button type="button" className="skip" onClick={focusMain}>본문으로 건너뛰기</button>
       <header className="nav">
         <div className="nav-inner">
           <a className="wordmark" href="#/">
