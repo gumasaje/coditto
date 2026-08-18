@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "mock-repository-write-guard-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "읽기 전용 저장소가 쓰기 요청을 성공처럼 처리해요",
+    "category": "Backend",
+    "stack": "Java",
+    "bugType": "쓰기 제어",
+    "estimatedMinutes": 25,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/bonus/MockMemberRepository.java",
+      "src/main/java/bonus/MemberRepository.java",
+      "src/main/java/role/Role.java",
+      "src/main/java/role/Lion.java",
+      "src/main/java/role/Staff.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/bonus/MockMemberRepository.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}
