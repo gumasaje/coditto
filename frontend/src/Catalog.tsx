@@ -122,8 +122,10 @@ export function Catalog() {
           <p className="note">문제를 불러오는 중…</p>
         ) : (
           <div className="shell catalog-body">
-            <CategoryTabs tabs={tabs} selected={activeCategory} onSelect={selectCategory} />
-            <FilterBoard groups={groups} onToggle={toggleFilter} />
+            <div className="catalog-filters">
+              <CategoryTabs tabs={tabs} selected={activeCategory} onSelect={selectCategory} />
+              <FilterBoard groups={groups} onToggle={toggleFilter} />
+            </div>
             <ProblemTable
               problems={visible}
               passedIds={passedIds}

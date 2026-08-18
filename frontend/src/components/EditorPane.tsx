@@ -2,11 +2,30 @@ import Editor, { Monaco, OnMount } from '@monaco-editor/react'
 import { useMemo, useRef, useState } from 'react'
 import { languageFromPath, monacoLanguage } from '../copy'
 import { buildFileTree } from '../fileTree'
+import { findJavaImportFoldRange } from '../javaImportFolding'
 import { ProblemFile } from '../types'
 import { FileTreeView } from './FileTreeView'
 import { SplitHandle } from './SplitHandle'
 
 const THEME = 'coditto'
+
+let javaImportFoldingRegistered = false
+
+function registerJavaImportFolding(monaco: Monaco) {
+  if (javaImportFoldingRegistered) return
+  javaImportFoldingRegistered = true
+  monaco.languages.registerFoldingRangeProvider('java', {
+    provideFoldingRanges(model: { getValue(): string }) {
+      const range = findJavaImportFoldRange(model.getValue())
+      if (!range) return []
+      return [{
+        start: range.start,
+        end: range.end,
+        kind: monaco.languages.FoldingRangeKind.Imports,
+      }]
+    },
+  })
+}
 
 function applyTheme(monaco: Monaco) {
   monaco.editor.defineTheme(THEME, {
@@ -106,7 +125,10 @@ export function EditorPane({
             onChange={(next) => {
               if (!locked && next != null) onChange(next)
             }}
-            beforeMount={applyTheme}
+            beforeMount={(monaco) => {
+              applyTheme(monaco)
+              registerJavaImportFolding(monaco)
+            }}
             onMount={bindEditor}
             loading={<p className="editor-loading">에디터를 불러오는 중…</p>}
             options={{
@@ -136,6 +158,8 @@ export function EditorPane({
               wordBasedSuggestions: 'off',
               renderValidationDecorations: 'off',
               folding: true,
+              foldingStrategy: 'auto',
+              foldingImportsByDefault: true,
               contextmenu: false,
             }}
             height="100%"
