@@ -9,6 +9,8 @@ class RoleServiceTargetTest {
 
     @Test
     void appliesTheRequestedRoleWhenTheChangeIsApproved() {
-        assertEquals("ADMIN", roleService.updateRole("MEMBER", "ADMIN", true));
+        RoleChangeRequest request = new RoleChangeRequest("MEMBER", "ADMIN", true);
+
+        assertEquals("ADMIN", roleService.updateRole(request));
     }
 }

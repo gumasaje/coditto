@@ -9,6 +9,8 @@ class RoleServiceRegressionTest {
 
     @Test
     void preservesTheCurrentRoleWhenTheChangeIsRejected() {
-        assertEquals("MEMBER", roleService.updateRole("MEMBER", "ADMIN", false));
+        RoleChangeRequest request = new RoleChangeRequest("MEMBER", "ADMIN", false);
+
+        assertEquals("MEMBER", roleService.updateRole(request));
     }
 }

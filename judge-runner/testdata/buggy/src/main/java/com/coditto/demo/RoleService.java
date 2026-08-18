@@ -1,10 +1,10 @@
 package com.coditto.demo;
 
 public final class RoleService {
-    public String updateRole(String currentRole, String requestedRole, boolean approved) {
-        if (approved) {
-            return currentRole;
+    public String updateRole(RoleChangeRequest request) {
+        if (request.approved()) {
+            return request.currentRole();
         }
-        return currentRole;
+        return request.currentRole();
     }
 }

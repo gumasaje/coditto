@@ -14,7 +14,8 @@
   },
   "display": {
     "files": [
-      "src/main/java/com/coditto/demo/RoleService.java"
+      "src/main/java/com/coditto/demo/RoleService.java",
+      "src/main/java/com/coditto/demo/RoleChangeRequest.java"
     ]
   },
   "runtime": {
