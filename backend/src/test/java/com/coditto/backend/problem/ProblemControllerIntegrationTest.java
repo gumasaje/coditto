@@ -113,8 +113,7 @@ class ProblemControllerIntegrationTest {
         var responseBuilder = mockMvc.perform(get("/api/problems"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categories[0]").value("Backend"))
-                .andExpect(jsonPath("$.categories[1]").value("Frontend"))
-                .andExpect(jsonPath("$.categories[2]").value("Data·AI"))
+                .andExpect(jsonPath("$.categories.length()").value(1))
                 .andExpect(jsonPath("$.problems.length()").value(DISPLAY_FILES.size()));
 
         List<String> sortedIds = DISPLAY_FILES.keySet().stream().sorted().toList();
