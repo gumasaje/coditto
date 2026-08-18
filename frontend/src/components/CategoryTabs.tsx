@@ -1,7 +1,8 @@
-import { categoryLabel } from '../copy'
+import { ALL_CATEGORY, categoryLabel } from '../copy'
+import { FilterPicker } from './FilterPicker'
 
 /**
- * 카테고리 탭. 활성 표시는 잉크색 밑줄만 남긴다.
+ * 카테고리 유형 선택. 트리거를 누르면 카테고리가 펼쳐진다.
  */
 export function CategoryTabs({
   tabs,
@@ -13,19 +14,13 @@ export function CategoryTabs({
   onSelect: (tab: string) => void
 }) {
   return (
-    <div role="tablist" aria-label="카테고리" className="tabs">
-      {tabs.map((name) => (
-        <button
-          key={name}
-          type="button"
-          role="tab"
-          aria-selected={name === selected}
-          className={name === selected ? 'tab is-active' : 'tab'}
-          onClick={() => onSelect(name)}
-        >
-          {categoryLabel(name)}
-        </button>
-      ))}
-    </div>
+    <FilterPicker
+      label="카테고리"
+      valueLabel={categoryLabel(selected)}
+      options={tabs.map((name) => ({ value: name, label: categoryLabel(name) }))}
+      selected={selected}
+      filled={selected !== ALL_CATEGORY}
+      onSelect={(value) => onSelect(value === selected && value !== ALL_CATEGORY ? ALL_CATEGORY : value)}
+    />
   )
 }

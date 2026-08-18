@@ -1,3 +1,5 @@
+import { FilterPicker } from './FilterPicker'
+
 export type FilterGroup = {
   id: string
   label: string
@@ -6,7 +8,7 @@ export type FilterGroup = {
 }
 
 /**
- * 필터를 기술 스택·오류 유형·난이도로 나눠, 한 줄에 섞인 칩보다 구분이 보이게 한다.
+ * 기술 스택·오류 유형·난이도를 유형 선택기로 두고, 클릭하면 선택지가 펼쳐지게 한다.
  */
 export function FilterBoard({
   groups,
@@ -19,25 +21,17 @@ export function FilterBoard({
   if (visible.length === 0) return null
 
   return (
-    <div className="filter-board">
+    <>
       {visible.map((group) => (
-        <fieldset key={group.id} className="filter-section">
-          <legend>{group.label}</legend>
-          <div className="chips">
-            {group.options.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={option === group.selected}
-                className={option === group.selected ? 'chip is-active' : 'chip'}
-                onClick={() => onToggle(group.id, option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <FilterPicker
+          key={group.id}
+          label={group.label}
+          valueLabel={group.selected ?? '전체'}
+          options={group.options.map((option) => ({ value: option, label: option }))}
+          selected={group.selected}
+          onSelect={(value) => onToggle(group.id, value)}
+        />
       ))}
-    </div>
+    </>
   )
 }
