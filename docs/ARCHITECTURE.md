@@ -1,6 +1,6 @@
 # Coditto 기술 아키텍처
 
-**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 문제 조회·problemId 제출·면접 질문 API 구현, Phase C 기존 단일 문제 제출/결과 UI 구현(신규 problemId 계약 연결은 미구현)
+**상태:** Phase A fixture·Runner 및 Issue #6 공개 PBL 문제 패키지 구현, Phase B 문제 조회·problemId 제출·면접 질문 API 구현, Phase C 문제 목록·작업공간·problemId 제출·면접 카드 UI 부분 구현(Issue #3 Monaco·파일 트리·읽기 전용 문맥과 목표/회귀 suites 표시는 미구현)
 
 ## 첫 실행 가능한 핵심 흐름: Issue #1
 
@@ -15,13 +15,13 @@ Issue #1은 첫 구현 순서와 범위를 정하는 기준이며, 다음의 가
 → Frontend에 결과 표시
 ```
 
-Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재는 Phase A와 최소 Phase B가 구현됐습니다.
+Issue #1을 완료하려면 아래 세 단계가 모두 필요합니다. 현재는 Phase A, Phase B, Phase C(문제 목록·작업공간 연결)가 구현됐습니다. Issue #3의 Monaco Editor·프로젝트 트리·읽기 전용 문맥은 아직 없습니다.
 
 | 단계 | 범위 | 현재 상태 | 완료 증거 |
 | --- | --- | --- | --- |
 | A. Fixture와 Runner | `problems/`, `judge-runner/`; 로컬 또는 신뢰하는 데모 입력을 Docker에서 검증 | 완료 | `role-update-001`과 두 공개 PBL 문제를 실제 격리 Docker에서 반복 검증하고 상세 비노출 및 매 실행 후 cleanup 확인 |
 | B. API 어댑터 | `backend/`; 문제 목록·상세와 problemId 기반 submission endpoint가 실제 Runner 호출 | 구현 | 기동 시 검증된 문제 인덱스를 만들고 endpoint 통합 테스트가 요청 문제별 Python subprocess의 정규화 결과를 반환하며 malformed stdout·timeout을 `SYSTEM_FAILED`/`INFRA_ERROR`로 처리함 |
-| C. 제출과 결과 UI | `frontend/`; 하나의 얇은 제출 동작과 결과 화면 | 기존 단일 문제 UI 구현 · 신규 계약 연결 미구현 | 기존 `{source}` 요청의 결과 표시와 Frontend 테스트는 구현됐으나 필수 `problemId`와 문제 조회 화면은 후속 Frontend 범위 |
+| C. 제출과 결과 UI | `frontend/`; 문제 목록, 작업공간, 제출과 결과 화면 | 부분 구현 | `GET /api/problems` 목록·카테고리 탭, `GET /api/problems/{problemId}` Incident 패널과 코드 입력, `problemId`/`version`/`source` 제출, `TESTS_PASSED` 뒤에만 면접 카드 표시. Monaco·파일 트리·읽기 전용 문맥은 Issue #3 잔여 |
 
 PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 또는 개인화 문제는 Issue #1 범위 밖입니다.
 
@@ -29,7 +29,7 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 
 | 경로 | 책임 | 현재 상태 |
 | --- | --- | --- |
-| `frontend/` | Issue #1 제출/결과 화면, 이후 제품 UI | 미구현 |
+| `frontend/` | 문제 목록·작업공간·제출/결과·면접 카드, 이후 제품 UI | Phase C 목록·작업공간·제출·면접 카드 부분 구현. Issue #3 Monaco·파일 트리·읽기 전용은 미구현 |
 | `backend/` | 문제 catalog와 Issue #1 Runner 어댑터, 독립 면접 질문 생성 API, 이후 session과 persistence | Phase B 문제 조회·problemId 제출·면접 질문 API 구현 |
 | `judge-runner/` | 입력 검증, 격리 실행, 결과 정규화, cleanup | Phase A 구현 완료 |
 | `problems/` | 공개 demo fixture, 두 PBL 문제와 problem-package 계약 | Phase A 및 Issue #6 구현 완료 |

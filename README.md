@@ -15,7 +15,7 @@ Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주
 
 [Issue #1](https://github.com/gumasaje/coditto/issues/1)은 첫 실행 가능한 핵심 흐름으로, Java 21/Gradle/JUnit 공개 demo fixture를 최소 화면에서 제출해 실제 Docker Judge 결과를 다시 표시하는 것을 목표로 합니다. `TESTS_PASSED`, `TESTS_FAILED`, `COMPILE_FAILED`를 구분하며 PostgreSQL, 인증, 브라우저 IDE, 최종 UI, A–E·Mutant 평가는 포함하지 않습니다.
 
-현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 Vite/React 단일 문제 제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. 별도 `POST /api/interview-questions`는 공개 statement와 submitted unified diff만 OpenAI에 전달해 질문 카드 세 개를 생성하며, key가 없거나 생성에 실패하면 Judge 경로와 독립적으로 `UNAVAILABLE`을 반환합니다. 실제 key 연결 검증과 Frontend 연결은 이 Backend phase의 범위 밖입니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
+현재 Phase A의 공개 fixture와 Docker Runner, Phase B의 Spring Backend 어댑터, Phase C의 문제 목록·작업공간·제출 화면이 구현됐습니다. Backend는 기동 시 공개 문제 패키지를 인덱싱해 `GET /api/problems`와 `GET /api/problems/{problemId}`로 목록·상세를 반환합니다. `POST /api/submissions`는 `problemId`, 선택 `version`, 단일 `source`를 받아 별도 Python Runner 프로세스를 호출하고 검증된 정규화 Judge JSON을 반환합니다. Frontend는 이 계약으로 문제 목록과 작업공간을 채우고 선택한 `problemId`로 제출합니다. Issue #3의 Monaco Editor·프로젝트 파일 트리·읽기 전용 문맥 표시는 아직 구현하지 않았습니다. 별도 `POST /api/interview-questions`는 공개 statement와 submitted unified diff만 OpenAI에 전달해 질문 카드 세 개를 생성하며, key가 없거나 생성에 실패하면 Judge 경로와 독립적으로 `UNAVAILABLE`을 반환합니다. Frontend는 판정이 `COMPLETED`/`TESTS_PASSED`일 때만 이 endpoint를 호출하고, `UNAVAILABLE`이면 카드 영역만 접습니다. 구현 순서와 모노레포 경계는 [기술 아키텍처](docs/ARCHITECTURE.md), Runner 입출력과 격리 조건은 [Judge 입출력 명세](docs/contracts/judge.md)에 있습니다.
 
 Issue #6에서는 공개 PBL 저장소에서 검토한 Java 문제와 Spring Boot/JPA 문제를
 `problems/`에 추가했습니다. 일반 Java 문제는 기존 Judge 이미지를 재사용하고,
@@ -23,7 +23,7 @@ Spring 문제는 같은 격리 경계를 공유하는 별도 dependency-cache im
 
 ## Phase C 로컬 실행
 
-현재 `frontend/`는 이전 `{ "source": ... }` 단일 문제 요청을 사용하므로 필수 `problemId` 계약과 아직 연결되지 않았습니다. 아래 명령은 각 component 실행용이며, 새 문제 목록·상세·제출 API는 Frontend 연결 전까지 curl 또는 API client로 검증합니다.
+아래 명령은 각 component 실행용입니다. Frontend는 문제 목록에서 문제를 고른 뒤 작업공간에서 제출합니다.
 
 Docker Desktop의 Client와 Server가 모두 실행 중이어야 합니다. 현재 로컬 검증은 Docker 29.6.2, Java 21.0.2, Gradle Wrapper 8.10.2에서 수행했습니다.
 
@@ -41,7 +41,7 @@ npm run build
 npm run dev
 ```
 
-Frontend는 `http://localhost:5173`에서 열고 `/api` 상대 경로로 Backend `http://localhost:8080`에 요청합니다. Vite proxy 설정은 `frontend/vite.config.ts`에 있습니다. Backend를 먼저 실행한 뒤 Frontend 화면의 textarea에 `RoleService.java` 전체를 붙여 넣고 제출합니다.
+Frontend는 `http://localhost:5173`에서 열고 `/api` 상대 경로로 Backend `http://localhost:8080`에 요청합니다. Vite proxy 설정은 `frontend/vite.config.ts`에 있습니다. Backend를 먼저 실행한 뒤 문제 목록에서 문제를 선택하고, 작업공간에 미리 채워진 코드를 수정해 제출합니다.
 
 면접 질문 API의 OpenAI 호출은 선택 사항입니다. `OPENAI_API_KEY`가 비어 있으면 외부 요청 없이 `UNAVAILABLE` 응답을 반환합니다.
 
@@ -53,7 +53,7 @@ judge-runner/testdata/buggy/src/main/java/com/coditto/demo/RoleService.java     
 judge-runner/testdata/compile-error/src/main/java/com/coditto/demo/RoleService.java  → COMPILE_FAILED
 ```
 
-Phase C 실제 상태: 세 샘플을 브라우저에서 제출해 화면과 Backend 응답에서 위 세 `execution` 값을 확인했습니다. Frontend 테스트 8개, Backend 테스트 14개, Runner 테스트 28개, Frontend production build도 통과했습니다. Runner의 target/regression `check.suites` 출력과 Backend의 suites 허용·값 검증을 실제 Docker Runner와 Backend를 연결해 관통 검증했으며, `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate 모두 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
+Phase C 실제 상태: Frontend는 문제 목록·카테고리 탭·작업공간에서 `problemId` 기반 제출을 사용하고, `COMPLETED`/`TESTS_PASSED`일 때만 면접 질문 카드를 별도 호출합니다. Issue #3 기준으로는 목록·작업공간·제출 연결까지 부분 완료이며, Monaco Editor·프로젝트 파일 트리·읽기 전용 문맥 표시는 후속입니다. Frontend 테스트와 production build가 통과했습니다. 이전 Backend·Runner 관통 검증에서 `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate가 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않으며, 목표/회귀 suites 화면 표시는 후속 Frontend 범위입니다.
 
 ## Phase A 검증
 
