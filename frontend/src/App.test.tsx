@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
@@ -26,7 +26,7 @@ const detail = {
   category: 'Backend',
   difficulty: 'EASY',
   estimatedMinutes: 30,
-  statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n```text\nsrc/main/java/com/coditto/demo/RoleService.java\n```\n',
+  statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n수정 가능한 파일은 `RoleService.java` 하나뿐입니다.\n',
   files: [{
     path: 'src/main/java/com/coditto/demo/RoleService.java',
     editable: true,
@@ -212,6 +212,10 @@ describe('workspace', () => {
     expect(await screen.findByRole('heading', { name: '역할 변경 승인 버그' })).toBeInTheDocument()
     expect(screen.getByText('은 승인된 요청을 반영해야 합니다.')).toBeInTheDocument()
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
+    const badge = within(screen.getByRole('group', { name: '수정 가능한 파일' })).getByRole('button', { name: 'RoleService.java' })
+    expect(badge).toHaveAttribute('title', 'src/main/java/com/coditto/demo/RoleService.java')
+    expect(screen.queryByText(/수정 가능한 파일은/)).not.toBeInTheDocument()
+    expect(screen.queryByText('src/main/java/com/coditto/demo/RoleService.java', { selector: 'code' })).not.toBeInTheDocument()
   })
 
   it('moves focus to the workspace main landmark from the skip link', async () => {
@@ -275,6 +279,12 @@ describe('workspace', () => {
     await userEvent.click(screen.getByRole('button', { name: /Member\.java/ }))
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toHaveValue('class Member {}')
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toBeDisabled()
+    const badge = within(screen.getByRole('group', { name: '수정 가능한 파일' })).getByRole('button', { name: 'RoleService.java' })
+    await userEvent.click(badge)
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
+    expect(
+      within(screen.getByRole('navigation', { name: '프로젝트 파일' })).getByRole('button', { name: 'RoleService.java' }),
+    ).toHaveAttribute('aria-current', 'page')
     await userEvent.click(screen.getByRole('button', { name: '제출하기' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/submissions', expect.objectContaining({
       method: 'POST',

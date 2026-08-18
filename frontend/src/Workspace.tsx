@@ -7,6 +7,7 @@ import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
 import { NETWORK_ERROR, categoryLabel, difficultyLabel } from './copy'
 import { catalogHash } from './routes'
+import { editableFilePaths } from './editableFiles'
 import { markPassed } from './progress'
 import {
   ApiError,
@@ -190,6 +191,8 @@ export function Workspace({ problemId }: { problemId: string }) {
             title={problem.title}
             meta={`${difficultyLabel(problem.difficulty)} · ${problem.estimatedMinutes}분 · v${problem.version}`}
             statement={problem.statement}
+            editablePaths={editableFilePaths(problem)}
+            onOpenFile={setActivePath}
           />
         </div>
         <SplitHandle axis="x" onDrag={dragX} />
