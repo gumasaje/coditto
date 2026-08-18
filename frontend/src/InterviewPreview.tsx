@@ -57,9 +57,10 @@ export function InterviewPreview() {
   return (
     <div className="workspace">
       <SiteHeader
+        current="workspace"
         center={
           <nav className="crumb">
-            <a href="#/">문제 목록</a>
+            <a href="#/problems">문제 목록</a>
             <span>/</span>
             <a href={catalogHash('Backend')}>Back-End</a>
             <span>/</span>
@@ -98,7 +99,7 @@ export function InterviewPreview() {
         </div>
       </div>
       <footer className="workspace-footer">
-        <a href="#/">문제 목록</a>
+        <a href="#/problems">문제 목록</a>
         <p className="mute">미리보기 · 실제 제출 없이 통과 후 카드를 보여 줍니다</p>
       </footer>
     </div>

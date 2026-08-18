@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
 const catalog = {
@@ -66,14 +66,28 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('home', () => {
+  it('sends the reader from the landing page to the problem catalog', async () => {
+    mockApi()
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /코드를 읽는 것에서 끝나지 않고/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
+    expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+  })
+})
+
 describe('catalog', () => {
+  beforeEach(() => {
+    window.location.hash = '#/problems'
+  })
+
   it('lists published problems from GET /api/problems', async () => {
     mockApi()
     render(<App />)
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
     expect(screen.getAllByText('Java · Spring').length).toBeGreaterThan(0)
     expect(screen.getAllByText('상태 보존').length).toBeGreaterThan(0)
-    expect(screen.getByText('약 30분')).toBeInTheDocument()
+    expect(screen.getByText(/약 30분/)).toBeInTheDocument()
     expect(screen.getAllByText('Easy').length).toBeGreaterThan(0)
   })
 

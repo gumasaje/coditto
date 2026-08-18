@@ -2,16 +2,16 @@
 @source "./**/*.{ts,tsx}";
 
 @theme {
-  --font-sans: "IBM Plex Sans KR", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --color-void: #10110f;
-  --color-panel: #171816;
-  --color-line: #2c2e29;
-  --color-line-strong: #4a4d45;
-  --color-ink: #eceae3;
-  --color-mute: #8d8b82;
-  --color-acid: #c8f000;
-  --color-acid-ink: #14180a;
+  --font-sans: Pretendard, "IBM Plex Sans KR", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-void: #0d1b2a;
+  --color-panel: #1b263b;
+  --color-line: #415a77;
+  --color-line-strong: #778da9;
+  --color-ink: #0d1b2a;
+  --color-mute: #415a77;
+  --color-acid: #415a77;
+  --color-acid-ink: #e0e1dd;
   --color-paper: #f3f0e8;
   --color-paper-ink: #1b1a16;
   --color-danger: #e07070;
@@ -38,7 +38,7 @@
 
 .editor-input {
   color: transparent;
-  caret-color: #c8f000;
+  caret-color: #e0e1dd;
   -webkit-text-fill-color: transparent;
 }
 
@@ -68,11 +68,11 @@
 .split-col { width: 6px; cursor: col-resize; }
 .split-row { height: 6px; cursor: row-resize; }
 .split-col:hover,
-.split-row:hover { background: #c8f000; }
+.split-row:hover { background: #778da9; }
 
 .tok-comment { color: #6f6d66; }
 .tok-string { color: #d4b483; }
-.tok-keyword { color: #c8f000; }
+.tok-keyword { color: #778da9; }
 .tok-type { color: #8fb9a8; }
 .tok-number { color: #e8a07a; }
 .tok-annotation { color: #c4a574; }

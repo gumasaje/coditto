@@ -8,6 +8,13 @@ export function difficultyLabel(value: string): string {
   return value
 }
 
+export function difficultyLevel(value: string): string {
+  if (value === 'EASY') return 'Lv. 1'
+  if (value === 'MEDIUM') return 'Lv. 2'
+  if (value === 'HARD') return 'Lv. 3'
+  return value
+}
+
 export function categoryLabel(value: string): string {
   if (value === 'Backend') return 'Back-End'
   if (value === 'Frontend') return 'Front-End'

@@ -1,4 +1,4 @@
-import { categoryLabel, difficultyLabel } from '../copy'
+import { categoryLabel, difficultyLabel, difficultyLevel } from '../copy'
 import { ProblemSummary } from '../types'
 
 export function ProblemTable({
@@ -15,41 +15,32 @@ export function ProblemTable({
   }
 
   return (
-    <div className="table-wrap">
-      <table className="problem-table">
-        <thead>
-          <tr>
-            <th>문제</th>
-            <th>기술 스택</th>
-            <th>오류 유형</th>
-            <th>예상 시간</th>
-            <th>난이도</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {problems.map((problem) => {
-            const passed = passedIds.includes(problem.id)
-            return (
-              <tr key={problem.id}>
-                <td>
-                  <a className="problem-title" href={`#/problems/${problem.id}`}>{problem.title}</a>
-                  <p className="problem-cat">{categoryLabel(problem.category)}</p>
-                </td>
-                <td>{problem.stack}</td>
-                <td>{problem.bugType}</td>
-                <td>약 {problem.estimatedMinutes}분</td>
-                <td className="diff-easy">{difficultyLabel(problem.difficulty)}</td>
-                <td>
-                  <a className="status-link" href={`#/problems/${problem.id}`}>
-                    {passed ? '다시 풀기 →' : '문제 시작 →'}
-                  </a>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+    <div className="table">
+      <div className="row thead" aria-hidden="true">
+        <div />
+        <div>문제</div>
+        <div>오류 유형</div>
+        <div>난이도</div>
+        <div>상태</div>
+        <div />
+      </div>
+      {problems.map((problem, index) => {
+        const passed = passedIds.includes(problem.id)
+        return (
+          <a className="row trow" key={problem.id} href={`#/problems/${problem.id}`}>
+            <div className="p-no">{String(index + 1).padStart(2, '0')}</div>
+            <div>
+              <div className="p-title">{problem.title}</div>
+              <p className="p-sub">{categoryLabel(problem.category)} · {problem.stack} · 약 {problem.estimatedMinutes}분</p>
+            </div>
+            <div className="p-meta">{problem.bugType}</div>
+            <div className="p-level">{difficultyLevel(problem.difficulty)}</div>
+            <div className="p-state">{passed ? '해결' : '미해결'}</div>
+            <div className="p-go">{passed ? '다시 풀기' : '풀어보기'} <span className="arrow">→</span></div>
+            <span className="visually-hidden">{difficultyLabel(problem.difficulty)}</span>
+          </a>
+        )
+      })}
     </div>
   )
 }

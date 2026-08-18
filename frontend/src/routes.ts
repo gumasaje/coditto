@@ -11,9 +11,19 @@ export function isInterviewPreview(hash = window.location.hash): boolean {
   return hash === '#/preview/interview'
 }
 
+export function isHome(hash = window.location.hash): boolean {
+  return hash === '' || hash === '#' || hash === '#/'
+}
+
+export function isCatalogRoute(hash = window.location.hash): boolean {
+  if (readProblemId(hash) || isInterviewPreview(hash)) return false
+  if (hash.startsWith('#/problems')) return true
+  return hash.startsWith('#/?')
+}
+
 export function catalogHash(category: string): string {
-  if (!category || category === ALL_CATEGORY) return '#/'
-  return `#/?category=${encodeURIComponent(category)}`
+  if (!category || category === ALL_CATEGORY) return '#/problems'
+  return `#/problems?category=${encodeURIComponent(category)}`
 }
 
 export function readCatalogCategory(hash = window.location.hash): string {

@@ -140,7 +140,7 @@ export function Workspace({ problemId }: { problemId: string }) {
   if (error && !problem) {
     return (
       <div className="page">
-        <SiteHeader center={<a href="#/">문제 목록</a>} />
+        <SiteHeader current="workspace" center={<a href="#/problems">문제 목록</a>} />
         <p role="alert" className="note note-error">{error}</p>
       </div>
     )
@@ -149,7 +149,7 @@ export function Workspace({ problemId }: { problemId: string }) {
   if (!problem) {
     return (
       <div className="page">
-        <SiteHeader center={<a href="#/">문제 목록</a>} />
+        <SiteHeader current="workspace" center={<a href="#/problems">문제 목록</a>} />
         <p className="note">작업공간을 불러오는 중…</p>
       </div>
     )
@@ -161,9 +161,10 @@ export function Workspace({ problemId }: { problemId: string }) {
   return (
     <form className="workspace" onSubmit={submit}>
       <SiteHeader
+        current="workspace"
         center={
           <nav className="crumb">
-            <a href="#/">문제 목록</a>
+            <a href="#/problems">문제 목록</a>
             <span>/</span>
             <a href={catalogHash(problem.category)}>{categoryLabel(problem.category)}</a>
             <span>/</span>
@@ -193,7 +194,7 @@ export function Workspace({ problemId }: { problemId: string }) {
         </div>
       </div>
       <footer className="workspace-footer">
-        <a href="#/">문제 목록</a>
+        <a href="#/problems">문제 목록</a>
         <div className="footer-actions">
           {error && <p role="alert" className="danger">{error}</p>}
           <button type="submit" disabled={isSubmitting} className="submit">

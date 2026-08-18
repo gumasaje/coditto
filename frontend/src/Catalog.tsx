@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CatalogHero } from './components/CatalogHero'
 import { CategoryTabs } from './components/CategoryTabs'
 import { FilterBoard } from './components/FilterBoard'
 import { ProblemTable } from './components/ProblemTable'
@@ -26,8 +25,7 @@ function scopedProblems(catalog: ProblemCatalog, category: string): ProblemSumma
 }
 
 /**
- * 캡처 1 메인 페이지 골격: 헤더 → 비대칭 히어로 → 탭/칩 → 테이블.
- * 존재하지 않는 "준비 중" 행은 API 계약에 맞게 그리지 않는다.
+ * 프로토타입 문제 목록: 네이비 페이지 헤더와 밝은 본문의 필터·행 목록.
  */
 export function Catalog() {
   const [catalog, setCatalog] = useState<ProblemCatalog | null>(null)
@@ -104,21 +102,26 @@ export function Catalog() {
   return (
     <div className="page">
       <SiteHeader
-        center="한 번 맞히는 시험이 아니라, 안전하게 고치는 습관을 반복하는 훈련장"
+        current="problems"
         trailing={
-          <button type="button" onClick={() => setPassedIds(clearPassed())}>
+          <button type="button" className="nav-reset" onClick={() => setPassedIds(clearPassed())}>
             처음부터
           </button>
         }
       />
-      {error ? (
-        <p role="alert" className="note note-error">{error}</p>
-      ) : !catalog ? (
-        <p className="note">문제를 불러오는 중…</p>
-      ) : (
-        <>
-          <CatalogHero passed={passedIds.filter((id) => catalog.problems.some((problem) => problem.id === id)).length} total={catalog.problems.length} />
-          <div className="catalog-body">
+      <main id="main" tabIndex={-1}>
+        <section className="band">
+          <div className="shell page-head">
+            <h1 className="page-title">문제</h1>
+            <p className="page-body">문제가 있는 코드를 직접 수정하고, 실행 결과를 확인한 뒤 제출합니다.</p>
+          </div>
+        </section>
+        {error ? (
+          <p role="alert" className="note note-error">{error}</p>
+        ) : !catalog ? (
+          <p className="note">문제를 불러오는 중…</p>
+        ) : (
+          <div className="shell catalog-body">
             <CategoryTabs tabs={tabs} selected={activeCategory} onSelect={selectCategory} />
             <FilterBoard groups={groups} onToggle={toggleFilter} />
             <ProblemTable
@@ -127,8 +130,8 @@ export function Catalog() {
               emptyMessage={filteredOut ? '선택한 조건에 맞는 문제가 없습니다.' : '이 카테고리에 준비된 문제가 없습니다.'}
             />
           </div>
-        </>
-      )}
+        )}
+      </main>
     </div>
   )
 }
