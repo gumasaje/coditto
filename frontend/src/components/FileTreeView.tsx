@@ -1,4 +1,5 @@
 import { FileTreeNode } from '../fileTree'
+import { FileKindIcon } from './FileKindIcon'
 
 export function FileTreeView({
   nodes,
@@ -32,7 +33,10 @@ function TreeItem({
   if (node.children) {
     return (
       <div>
-        <p className="file-tree-folder" style={{ paddingLeft: 12 + depth * 12 }}>{node.name}</p>
+        <p className="file-tree-folder" style={{ paddingLeft: 12 + depth * 12 }}>
+          <FileKindIcon kind="folder" />
+          <span>{node.name}</span>
+        </p>
         {node.children.map((child) => (
           <TreeItem key={child.path ?? `${node.name}/${child.name}`} node={child} depth={depth + 1} activePath={activePath} onSelect={onSelect} />
         ))}
@@ -49,7 +53,10 @@ function TreeItem({
       aria-current={active ? 'page' : undefined}
       onClick={() => node.path && onSelect(node.path)}
     >
-      <span>{node.name}</span>
+      <span className="file-tree-label">
+        <FileKindIcon name={node.name} />
+        <span>{node.name}</span>
+      </span>
       {node.editable === false ? <span className="file-tree-lock">읽기 전용</span> : null}
     </button>
   )

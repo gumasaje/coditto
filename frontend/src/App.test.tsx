@@ -271,6 +271,7 @@ describe('workspace', () => {
     expect(screen.getByRole('navigation', { name: '프로젝트 파일' })).toBeInTheDocument()
     expect(screen.getByRole('separator', { name: '파일 트리 너비' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: '프로젝트 파일' }).parentElement).toHaveStyle({ width: '216px' })
+    expect(screen.getByText('src/main/java/com/coditto/demo')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Member\.java/ }))
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toHaveValue('class Member {}')
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toBeDisabled()
