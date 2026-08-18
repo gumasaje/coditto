@@ -1,17 +1,10 @@
 diff --git a/src/main/java/com/likelion/springboot/member/service/MemberService.java b/src/main/java/com/likelion/springboot/member/service/MemberService.java
 --- a/src/main/java/com/likelion/springboot/member/service/MemberService.java
 +++ b/src/main/java/com/likelion/springboot/member/service/MemberService.java
-@@ -3,4 +3,5 @@
+@@ -2,0 +3 @@
 +import com.likelion.springboot.global.exception.DuplicateMemberException;
- import com.likelion.springboot.global.exception.MemberNotFoundException;
- import com.likelion.springboot.member.domain.Member;
- import com.likelion.springboot.member.dto.MemberRenameRequest;
- import com.likelion.springboot.member.repository.MemberRepository;
-@@ -24,3 +25,7 @@ public class MemberService {
+@@ -23,0 +25,4 @@ public class MemberService {
 +        if (repository.existsByNameAndIdNot(request.name(), id)) {
 +            throw new DuplicateMemberException("이미 사용 중인 이름입니다. name: " + request.name());
 +        }
 +
-         member.rename(request.name());
-         return repository.save(member);
-     }

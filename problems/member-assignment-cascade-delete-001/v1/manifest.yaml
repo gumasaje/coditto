@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "member-assignment-cascade-delete-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "과제가 있는 멤버를 삭제할 수 없어요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "연관 삭제",
+    "estimatedMinutes": 30,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/likelion/springboot/member/domain/Member.java",
+      "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java",
+      "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+      "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-springboot:phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/likelion/springboot/member/domain/Member.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

@@ -1,0 +1,12 @@
+diff --git a/src/main/java/com/likelion/springboot/member/service/MemberService.java b/src/main/java/com/likelion/springboot/member/service/MemberService.java
+--- a/src/main/java/com/likelion/springboot/member/service/MemberService.java
++++ b/src/main/java/com/likelion/springboot/member/service/MemberService.java
+@@ -2,0 +3 @@
++import com.likelion.springboot.global.exception.InvalidMemberRequestException;
+@@ -4,0 +6 @@
++import com.likelion.springboot.member.domain.RoleType;
+@@ -23,0 +26,4 @@
++        if (member.getRoleType() != RoleType.LION) {
++            throw new InvalidMemberRequestException("아기사자만 아기사자 수정 요청을 사용할 수 있습니다.");
++        }
++

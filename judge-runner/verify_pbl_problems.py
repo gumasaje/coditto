@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -17,27 +18,17 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 RUNNER = REPOSITORY_ROOT / "judge-runner/run.py"
 SPRING_DOCKERFILE = REPOSITORY_ROOT / "judge-runner/docker/springboot/Dockerfile"
 PROBLEMS = {
-    "member-list-exposure-001": {
-        "version": 1,
-        "forbiddenDetails": (
-            "MemoryMemberRepositoryTargetTest",
-            "MemoryMemberRepositoryRegressionTest",
-            "changingTheReturnedListDoesNotChangeStoredMembers",
-            "preservesSaveLookupDuplicateAndPartIndexBehavior",
-        ),
-    },
-    "member-name-uniqueness-001": {
-        "version": 1,
-        "forbiddenDetails": (
-            "MemberServiceRenameTargetTest",
-            "MemberServiceRenameRegressionTest",
-            "rejectsANameAlreadyUsedByAnotherMember",
-            "usesAnInMemoryH2DataSource",
-            "allowsKeepingTheCurrentName",
-            "persistsAnUnusedName",
-            "preservesTheNotFoundBehavior",
-        ),
-    },
+    "member-list-exposure-001": {"version": 1, "spring": False},
+    "lion-constructor-validation-001": {"version": 1, "spring": False},
+    "submission-policy-conjunction-001": {"version": 1, "spring": False},
+    "mock-repository-write-guard-001": {"version": 1, "spring": False},
+    "member-part-index-delete-001": {"version": 1, "spring": False},
+    "member-name-uniqueness-001": {"version": 1, "spring": True},
+    "member-assignment-cascade-delete-001": {"version": 1, "spring": True},
+    "assignment-member-existence-001": {"version": 1, "spring": True},
+    "lion-update-role-validation-001": {"version": 1, "spring": True},
+    "assignment-title-validation-001": {"version": 1, "spring": True},
+    "assignment-title-search-001": {"version": 1, "spring": True},
 }
 EXPECTED = {
     "buggy": {
@@ -147,36 +138,51 @@ def assert_isolated_command(stderr: str, label: str) -> None:
         raise RuntimeError(f"{label} exposed a forbidden host mount")
 
 
+def official_test_details(problem_id: str) -> tuple[str, ...]:
+    test_root = REPOSITORY_ROOT / "problems" / problem_id / "v1/judge-only"
+    details: list[str] = []
+    for source in sorted(test_root.glob("*-tests/src/test/java/**/*.java")):
+        details.append(source.stem)
+        text = source.read_text(encoding="utf-8")
+        details.extend(re.findall(r"\bvoid\s+([A-Za-z][A-Za-z0-9_]*)\s*\(", text))
+    return tuple(details)
+
+
 def assert_no_forbidden_output(output: str, problem_id: str) -> None:
-    forbidden = COMMON_FORBIDDEN_OUTPUT + PROBLEMS[problem_id]["forbiddenDetails"]
+    forbidden = COMMON_FORBIDDEN_OUTPUT + official_test_details(problem_id)
     for marker in forbidden:
         if marker in output:
             raise RuntimeError(f"{problem_id} exposed forbidden test detail: {marker!r}")
 
 
-def assert_spring_package_uses_only_h2() -> None:
-    problem_dir = REPOSITORY_ROOT / "problems/member-name-uniqueness-001/v1"
-    build_text = (problem_dir / "base/build.gradle").read_text(encoding="utf-8").lower()
-    if "testimplementation 'com.h2database:h2'" not in build_text:
-        raise RuntimeError("Spring problem does not declare H2 as a test dependency")
-    for marker in ("mysql", "springdoc"):
-        if marker in build_text:
-            raise RuntimeError(f"Spring problem includes forbidden dependency marker: {marker}")
+def assert_spring_packages_use_only_h2() -> None:
+    for problem_id, profile in PROBLEMS.items():
+        if not profile["spring"]:
+            continue
 
-    forbidden_files = (
-        problem_dir / "base/src/main/resources/application.properties",
-        problem_dir / "base/src/test/java/com/likelion/springboot/ApplicationTests.java",
-    )
-    if any(path.exists() for path in forbidden_files):
-        raise RuntimeError("Spring problem includes external DB properties or ApplicationTests")
+        problem_dir = REPOSITORY_ROOT / "problems" / problem_id / "v1"
+        build_text = (problem_dir / "base/build.gradle").read_text(encoding="utf-8").lower()
+        if "testimplementation 'com.h2database:h2'" not in build_text:
+            raise RuntimeError(f"{problem_id} does not declare H2 as a test dependency")
+        for marker in ("mysql", "springdoc"):
+            if marker in build_text:
+                raise RuntimeError(f"{problem_id} includes forbidden dependency marker: {marker}")
 
-    regression = (
-        problem_dir
-        / "judge-only/regression-tests/src/test/java/com/likelion/springboot/member/service"
-        / "MemberServiceRenameRegressionTest.java"
-    ).read_text(encoding="utf-8")
-    if "jdbc:h2:mem:" not in regression:
-        raise RuntimeError("Spring regression suite does not assert the H2 in-memory JDBC URL")
+        forbidden_files = (
+            problem_dir / "base/src/main/resources/application.properties",
+            problem_dir / "base/src/test/java/com/likelion/springboot/ApplicationTests.java",
+        )
+        if any(path.exists() for path in forbidden_files):
+            raise RuntimeError(f"{problem_id} includes external DB properties or ApplicationTests")
+
+        regression_sources = sorted(
+            (problem_dir / "judge-only/regression-tests/src/test/java").rglob("*.java")
+        )
+        regression_text = "\n".join(
+            source.read_text(encoding="utf-8") for source in regression_sources
+        )
+        if "jdbc:h2:mem:" not in regression_text:
+            raise RuntimeError(f"{problem_id} does not assert the H2 in-memory JDBC URL")
 
 
 def assert_no_external_database_markers(output: str, label: str) -> None:
@@ -232,7 +238,7 @@ def verify_problem(problem_id: str) -> dict[str, Any]:
             assert_isolated_command(result.stderr, label)
             combined_output = result.stdout + result.stderr
             assert_no_forbidden_output(combined_output, problem_id)
-            if problem_id == "member-name-uniqueness-001":
+            if profile["spring"]:
                 assert_no_external_database_markers(combined_output, label)
             observed.append(parsed)
 
@@ -255,7 +261,7 @@ def verify_problem(problem_id: str) -> dict[str, Any]:
 def main() -> int:
     docker_version = run(["docker", "version", "--format", "{{.Server.Version}}"])
     require_success(docker_version, "Docker daemon check")
-    assert_spring_package_uses_only_h2()
+    assert_spring_packages_use_only_h2()
 
     java_manifest = load_manifest(REPOSITORY_ROOT / "problems/member-list-exposure-001/v1")
     java_image = java_manifest["runtime"]["image"]

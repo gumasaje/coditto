@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "lion-constructor-validation-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "잘못된 아기사자 정보로 객체가 생성돼요",
+    "category": "Backend",
+    "stack": "Java",
+    "bugType": "입력 검증",
+    "estimatedMinutes": 20,
+    "difficulty": "EASY"
+  },
+  "display": {
+    "files": [
+      "src/main/java/package1/Lion.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/package1/Lion.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

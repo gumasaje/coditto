@@ -1,0 +1,15 @@
+diff --git a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+--- a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
++++ b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+@@ -5,0 +6 @@
++import com.likelion.springboot.global.exception.InvalidAssignmentRequestException;
+@@ -26,0 +28,2 @@
++        validateTitle(request.title());
++
+@@ -30,0 +34,6 @@
++
++    private void validateTitle(String title) {
++        if (title == null || title.isBlank()) {
++            throw new InvalidAssignmentRequestException("과제 제목은 비어 있을 수 없습니다.");
++        }
++    }

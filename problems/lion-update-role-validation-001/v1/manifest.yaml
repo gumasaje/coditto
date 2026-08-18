@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "lion-update-role-validation-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "운영진을 아기사자 수정 API로 바꿀 수 있어요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "역할 검증",
+    "estimatedMinutes": 30,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+      "src/main/java/com/likelion/springboot/member/dto/LionUpdateRequest.java",
+      "src/main/java/com/likelion/springboot/member/domain/Member.java",
+      "src/main/java/com/likelion/springboot/member/domain/RoleType.java",
+      "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+      "src/main/java/com/likelion/springboot/global/exception/InvalidMemberRequestException.java",
+      "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-springboot:phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/likelion/springboot/member/service/MemberService.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

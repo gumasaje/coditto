@@ -1,0 +1,7 @@
+diff --git a/src/main/java/bonus/MockMemberRepository.java b/src/main/java/bonus/MockMemberRepository.java
+--- a/src/main/java/bonus/MockMemberRepository.java
++++ b/src/main/java/bonus/MockMemberRepository.java
+@@ -29,0 +30 @@
++        throw new UnsupportedOperationException("읽기 전용 저장소에는 멤버를 저장할 수 없습니다.");
+@@ -68,0 +70 @@
++        throw new UnsupportedOperationException("읽기 전용 저장소에서는 멤버를 삭제할 수 없습니다.");

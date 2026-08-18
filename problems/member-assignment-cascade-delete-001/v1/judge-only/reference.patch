@@ -1,0 +1,8 @@
+diff --git a/src/main/java/com/likelion/springboot/member/domain/Member.java b/src/main/java/com/likelion/springboot/member/domain/Member.java
+--- a/src/main/java/com/likelion/springboot/member/domain/Member.java
++++ b/src/main/java/com/likelion/springboot/member/domain/Member.java
+@@ -3,0 +4 @@
++import jakarta.persistence.CascadeType;
+@@ -21 +22 @@
+-    @OneToMany(mappedBy = "member")
++    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE, orphanRemoval = true)

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "submission-policy-conjunction-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "한 가지 조건만 맞아도 과제를 제출할 수 있어요",
+    "category": "Backend",
+    "stack": "Java",
+    "bugType": "조건 결합",
+    "estimatedMinutes": 25,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/role/Role.java",
+      "src/main/java/role/Lion.java",
+      "src/main/java/role/Staff.java",
+      "src/main/java/policy/SubmissionPolicy.java",
+      "src/main/java/policy/GenerationSubmissionPolicy.java",
+      "src/main/java/policy/LionSubmissionPolicy.java",
+      "src/main/java/policy/StaffSubmissionPolicy.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/role/Role.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

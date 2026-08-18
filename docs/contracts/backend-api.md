@@ -51,9 +51,9 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
   "catalog": {
     "title": "회원 권한 수정 시 기존 관리자 권한이 사라져요",
     "category": "Backend",
-    "stack": "Java · Spring",
-    "bugType": "상태 보존",
-    "estimatedMinutes": 30,
+    "stack": "Java",
+    "bugType": "조건 분기",
+    "estimatedMinutes": 15,
     "difficulty": "EASY"
   },
   "display": {
@@ -93,9 +93,9 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
       "version": 1,
       "title": "회원 권한 수정 시 기존 관리자 권한이 사라져요",
       "category": "Backend",
-      "stack": "Java · Spring",
-      "bugType": "상태 보존",
-      "estimatedMinutes": 30,
+      "stack": "Java",
+      "bugType": "조건 분기",
+      "estimatedMinutes": 15,
       "difficulty": "EASY"
     }
   ]
@@ -119,7 +119,7 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
   "title": "회원 권한 수정 시 기존 관리자 권한이 사라져요",
   "category": "Backend",
   "difficulty": "EASY",
-  "estimatedMinutes": 30,
+  "estimatedMinutes": 15,
   "statement": "# 역할 변경 승인 버그\n\n…statement.md 원문…",
   "files": [
     {

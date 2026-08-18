@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "member-part-index-delete-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "멤버를 삭제해도 파트별 목록에는 남아 있어요",
+    "category": "Backend",
+    "stack": "Java",
+    "bugType": "상태 동기화",
+    "estimatedMinutes": 30,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/bonus/MemoryMemberRepository.java",
+      "src/main/java/bonus/MemberRepository.java",
+      "src/main/java/role/Role.java",
+      "src/main/java/role/Lion.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-gradle:8.10.2-phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/bonus/MemoryMemberRepository.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

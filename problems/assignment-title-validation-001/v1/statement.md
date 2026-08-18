@@ -1,0 +1,16 @@
+# 과제 생성 입력값 검증 누락
+
+과제 제목은 비어 있을 수 없습니다. 화면에서는 빈 제목을 막지만 생성 서비스는
+검증하지 않아 API를 직접 호출하면 `null`이나 공백 제목이 데이터베이스에 저장됩니다.
+
+멤버를 조회하거나 과제를 저장하기 전에 잘못된 제목을
+`InvalidAssignmentRequestException`으로 거부하세요. 유효한 과제 생성과 존재하지
+않는 멤버에 대한 기존 동작은 보존해야 합니다.
+
+수정 가능한 파일은 다음 하나뿐입니다.
+
+```text
+src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+```
+
+Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

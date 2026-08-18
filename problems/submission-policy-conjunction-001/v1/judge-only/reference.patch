@@ -1,0 +1,12 @@
+diff --git a/src/main/java/role/Role.java b/src/main/java/role/Role.java
+--- a/src/main/java/role/Role.java
++++ b/src/main/java/role/Role.java
+@@ -23,7 +23,7 @@ public abstract class Role {
+     }
+
+     public boolean canSubmitByAll() {
+-        return canSubmitByRole() || canSubmitByGeneration();
++        return canSubmitByRole() && canSubmitByGeneration();
+     }
+
+     public String getName() {

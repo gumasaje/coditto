@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "assignment-title-validation-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "제목 없는 과제가 API로 저장돼요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "입력 검증",
+    "estimatedMinutes": 25,
+    "difficulty": "MEDIUM"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java",
+      "src/main/java/com/likelion/springboot/assignment/dto/AssignmentCreateRequest.java",
+      "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java",
+      "src/main/java/com/likelion/springboot/member/domain/Member.java",
+      "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java",
+      "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+      "src/main/java/com/likelion/springboot/global/exception/InvalidAssignmentRequestException.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-springboot:phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}

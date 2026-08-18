@@ -1,0 +1,17 @@
+diff --git a/src/main/java/bonus/MemoryMemberRepository.java b/src/main/java/bonus/MemoryMemberRepository.java
+--- a/src/main/java/bonus/MemoryMemberRepository.java
++++ b/src/main/java/bonus/MemoryMemberRepository.java
+@@ -51,5 +51,13 @@ public class MemoryMemberRepository implements MemberRepository {
+     @Override
+     public void deleteByName(Role member) {
+         members.remove(member);
++
++        List<Role> partMembers = membersByPart.get(member.getPart());
++        if (partMembers != null) {
++            partMembers.remove(member);
++            if (partMembers.isEmpty()) {
++                membersByPart.remove(member.getPart());
++            }
++        }
+     }
+ }

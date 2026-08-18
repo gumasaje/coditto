@@ -1,0 +1,11 @@
+diff --git a/src/main/java/package1/Lion.java b/src/main/java/package1/Lion.java
+--- a/src/main/java/package1/Lion.java
++++ b/src/main/java/package1/Lion.java
+@@ -9,6 +9,7 @@ public class Lion {
+         this.name = name;
+         this.major = major;
+         this.generation = generation;
++        validate();
+     }
+
+     public void validate() {
