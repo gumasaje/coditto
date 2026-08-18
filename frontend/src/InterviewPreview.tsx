@@ -75,6 +75,8 @@ export function InterviewPreview() {
             title="회원 권한 수정 시 기존 관리자 권한이 사라져요"
             meta="Easy · 30분 · v1"
             statement={'# 역할 변경 승인 버그\n\n테스트가 통과하면 채점 결과 아래에 면접 카드 세 장이 붙습니다. 질문은 제출 diff와 문제 지문으로만 만듭니다.'}
+            editablePaths={['src/main/java/com/coditto/demo/RoleService.java']}
+            onOpenFile={() => undefined}
           />
         </div>
         <SplitHandle axis="x" onDrag={dragX} />
