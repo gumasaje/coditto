@@ -14,7 +14,9 @@ export function SiteHeader({
 }) {
   function skip(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault()
-    document.getElementById('main')?.focus()
+    const main = document.getElementById('main')
+    if (!main) return
+    main.focus()
   }
 
   return (

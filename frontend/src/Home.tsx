@@ -1,7 +1,8 @@
+import { HomeWalkthrough } from './components/HomeWalkthrough'
 import { SiteHeader } from './components/SiteHeader'
 
 /**
- * 프로토타입 홈: 네이비 히어로와 문제 해결 3단계.
+ * 프로토타입 홈: 네이비 히어로와 문제 해결 4단계, 이어서 화면 흐름.
  */
 export function Home() {
   return (
@@ -46,7 +47,15 @@ export function Home() {
                 <p className="step-body">수정한 코드를 실행해 결과를 확인하고 제출합니다.</p>
               </div>
             </li>
+            <li className="step">
+              <span className="step-no">04</span>
+              <div className="step-text">
+                <p className="step-title">면접 질문</p>
+                <p className="step-body">문제의 유형과 코드를 확인한 뒤, 면접 카드를 보여줍니다.</p>
+              </div>
+            </li>
           </ol>
+          <HomeWalkthrough />
           <div className="tail-link">
             <a className="underlink" href="#/problems">문제 풀어보기 <span className="arrow">→</span></a>
           </div>

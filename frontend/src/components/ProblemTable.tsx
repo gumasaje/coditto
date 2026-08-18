@@ -1,4 +1,4 @@
-import { categoryLabel, difficultyLabel, difficultyLevel } from '../copy'
+import { categoryLabel, difficultyLabel } from '../copy'
 import { ProblemSummary } from '../types'
 
 export function ProblemTable({
@@ -15,32 +15,38 @@ export function ProblemTable({
   }
 
   return (
-    <div className="table">
-      <div className="row thead" aria-hidden="true">
-        <div />
-        <div>문제</div>
-        <div>오류 유형</div>
-        <div>난이도</div>
-        <div>상태</div>
-        <div />
-      </div>
-      {problems.map((problem, index) => {
-        const passed = passedIds.includes(problem.id)
-        return (
-          <a className="row trow" key={problem.id} href={`#/problems/${problem.id}`}>
-            <div className="p-no">{String(index + 1).padStart(2, '0')}</div>
-            <div>
-              <div className="p-title">{problem.title}</div>
-              <p className="p-sub">{categoryLabel(problem.category)} · {problem.stack} · 약 {problem.estimatedMinutes}분</p>
-            </div>
-            <div className="p-meta">{problem.bugType}</div>
-            <div className="p-level">{difficultyLevel(problem.difficulty)}</div>
-            <div className="p-state">{passed ? '해결' : '미해결'}</div>
-            <div className="p-go">{passed ? '다시 풀기' : '풀어보기'} <span className="arrow">→</span></div>
-            <span className="visually-hidden">{difficultyLabel(problem.difficulty)}</span>
-          </a>
-        )
-      })}
-    </div>
+    <table className="table">
+      <caption className="visually-hidden">문제 목록</caption>
+      <thead>
+        <tr className="row thead">
+          <th scope="col"><span className="visually-hidden">번호</span></th>
+          <th scope="col">문제</th>
+          <th className="p-meta" scope="col">오류 유형</th>
+          <th className="p-level" scope="col">난이도</th>
+          <th className="p-state" scope="col">상태</th>
+          <th scope="col"><span className="visually-hidden">이동</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {problems.map((problem, index) => {
+          const passed = passedIds.includes(problem.id)
+          return (
+            <tr className="row trow" key={problem.id}>
+              <td className="p-no">{String(index + 1).padStart(2, '0')}</td>
+              <td>
+                <a className="p-title p-row-link" href={`#/problems/${problem.id}`}>
+                  {problem.title}
+                </a>
+                <p className="p-sub">{categoryLabel(problem.category)} · {problem.stack} · 약 {problem.estimatedMinutes}분</p>
+              </td>
+              <td className="p-meta">{problem.bugType}</td>
+              <td className="p-level">{difficultyLabel(problem.difficulty)}</td>
+              <td className="p-state">{passed ? '해결' : '미해결'}</td>
+              <td className="p-go">{passed ? '다시 풀기' : '풀어보기'} <span className="arrow" aria-hidden="true">→</span></td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }

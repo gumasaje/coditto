@@ -3,15 +3,8 @@ export const ALL_CATEGORY = '전체'
 
 export function difficultyLabel(value: string): string {
   if (value === 'EASY') return 'Easy'
-  if (value === 'MEDIUM') return 'Medium'
+  if (value === 'MEDIUM') return 'Normal'
   if (value === 'HARD') return 'Hard'
-  return value
-}
-
-export function difficultyLevel(value: string): string {
-  if (value === 'EASY') return 'Lv. 1'
-  if (value === 'MEDIUM') return 'Lv. 2'
-  if (value === 'HARD') return 'Lv. 3'
   return value
 }
 

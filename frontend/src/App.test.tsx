@@ -71,6 +71,8 @@ describe('home', () => {
     mockApi()
     render(<App />)
     expect(screen.getByRole('heading', { name: /코드를 읽는 것에서 끝나지 않고/ })).toBeInTheDocument()
+    expect(screen.getByText('문제의 유형과 코드를 확인한 뒤, 면접 카드를 보여줍니다.')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '화면으로 보는 진행' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
   })
@@ -85,6 +87,10 @@ describe('catalog', () => {
     mockApi()
     render(<App />)
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: '문제 목록' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '오류 유형' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '난이도' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '상태' })).toBeInTheDocument()
     expect(screen.getAllByText('Java · Spring').length).toBeGreaterThan(0)
     expect(screen.getAllByText('상태 보존').length).toBeGreaterThan(0)
     expect(screen.getByText(/약 30분/)).toBeInTheDocument()
@@ -137,6 +143,7 @@ describe('catalog', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Java$/ }))
     expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /전체 멤버 조회/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Normal' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Easy' }))
     expect(screen.getByText('선택한 조건에 맞는 문제가 없습니다.')).toBeInTheDocument()
   })
@@ -155,6 +162,7 @@ describe('catalog', () => {
     window.location.hash = '#/preview/interview'
     render(<App />)
     expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
     expect(screen.getByText('TESTS_PASSED')).toBeInTheDocument()
     expect(screen.getByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
     expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
@@ -185,6 +193,17 @@ describe('workspace', () => {
     expect(await screen.findByRole('heading', { name: '역할 변경 승인 버그' })).toBeInTheDocument()
     expect(screen.getByText('은 승인된 요청을 반영해야 합니다.')).toBeInTheDocument()
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
+  })
+
+  it('moves focus to the workspace main landmark from the skip link', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    mockApi()
+    render(<App />)
+    await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
+    const main = screen.getByRole('main')
+    expect(main).toHaveAttribute('id', 'main')
+    await userEvent.click(screen.getByRole('link', { name: '본문으로 건너뛰기' }))
+    expect(main).toHaveFocus()
   })
 
   it('focuses the editor when the file path control is clicked', async () => {

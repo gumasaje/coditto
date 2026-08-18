@@ -8,7 +8,7 @@ import { clearPassed, readPassedIds } from './progress'
 import { catalogHash, readCatalogCategory } from './routes'
 import { ProblemCatalog, ProblemSummary } from './types'
 
-const DIFFICULTY_ORDER = ['Easy', 'Medium', 'Hard']
+const DIFFICULTY_ORDER = ['Easy', 'Normal', 'Hard']
 
 function unique(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)))
