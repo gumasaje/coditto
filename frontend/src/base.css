@@ -572,16 +572,6 @@ a {
   font-size: 13px;
 }
 
-.editor-fallback {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
-
 .pane-left {
   display: flex;
   min-width: 0;

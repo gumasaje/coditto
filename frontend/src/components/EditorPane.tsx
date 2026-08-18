@@ -1,4 +1,4 @@
-import Editor, { Monaco } from '@monaco-editor/react'
+import Editor, { Monaco, OnMount } from '@monaco-editor/react'
 import { useMemo, useRef, useState } from 'react'
 import { languageFromPath, monacoLanguage } from '../copy'
 import { buildFileTree } from '../fileTree'
@@ -75,6 +75,11 @@ export function EditorPane({
     setTreeWidth(Math.min(380, Math.max(132, clientX - rect.left)))
   }
 
+  const bindSourceField: OnMount = (editor) => {
+    const textarea = editor.getDomNode()?.querySelector('textarea.inputarea')
+    if (textarea instanceof HTMLTextAreaElement) textarea.id = 'source'
+  }
+
   return (
     <div className="editor-pane">
       <div className="editor-head">
@@ -100,10 +105,12 @@ export function EditorPane({
               if (!locked && next != null) onChange(next)
             }}
             beforeMount={applyTheme}
+            onMount={bindSourceField}
             loading={<p className="editor-loading">에디터를 불러오는 중…</p>}
             options={{
               readOnly: locked,
               domReadOnly: locked,
+              ariaLabel: activePath,
               fontFamily: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
               fontSize: 13,
               lineHeight: 24,
@@ -130,18 +137,6 @@ export function EditorPane({
               contextmenu: false,
             }}
             height="100%"
-          />
-          <textarea
-            id="source"
-            className="editor-fallback"
-            value={value}
-            disabled={locked}
-            readOnly={locked}
-            spellCheck={false}
-            aria-label={activePath}
-            onChange={(event) => {
-              if (!locked) onChange(event.target.value)
-            }}
           />
         </div>
       </div>
