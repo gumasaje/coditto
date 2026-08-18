@@ -1,0 +1,6 @@
+diff --git a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+--- a/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
++++ b/src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
+@@ -20 +20 @@
+-        return assignmentRepository.findByTitle(keyword);
++        return assignmentRepository.findByTitleContaining(keyword);

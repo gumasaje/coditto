@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "draft-v0",
+  "problem": {
+    "id": "assignment-title-search-001",
+    "version": 1
+  },
+  "catalog": {
+    "title": "과제 제목의 일부로 검색하면 결과가 없어요",
+    "category": "Backend",
+    "stack": "Java · Spring",
+    "bugType": "검색 조건",
+    "estimatedMinutes": 20,
+    "difficulty": "EASY"
+  },
+  "display": {
+    "files": [
+      "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java",
+      "src/main/java/com/likelion/springboot/assignment/repository/AssignmentRepository.java",
+      "src/main/java/com/likelion/springboot/assignment/domain/Assignment.java"
+    ]
+  },
+  "runtime": {
+    "java": 21,
+    "buildTool": {
+      "name": "gradle",
+      "version": "8.10.2"
+    },
+    "image": "coditto/judge-java21-springboot:phase-a"
+  },
+  "candidate": {
+    "allowedPaths": [
+      "src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java"
+    ],
+    "maxFiles": 1,
+    "maxBytes": 16384
+  }
+}
