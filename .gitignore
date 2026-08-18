@@ -46,6 +46,10 @@ secrets/
 tmp/
 temp/
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Judge workspaces, private packs, and local execution artifacts
 .coditto/private-problem-packs/
 judge-work/

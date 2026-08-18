@@ -331,4 +331,28 @@ describe('interview cards', () => {
     await waitFor(() => expect(screen.queryByText('질문을 만드는 중…')).not.toBeInTheDocument())
     expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
   })
+
+  it('keeps TESTS_PASSED and interview request when progress storage write fails', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ runStatus: 'COMPLETED', check: { execution: 'TESTS_PASSED' } })
+      }
+      if (url === '/api/interview-questions' && init?.method === 'POST') return jsonResponse(generatedQuestions)
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
+    expect(await screen.findByText('TESTS_PASSED')).toBeInTheDocument()
+    expect(screen.queryByText(/네트워크 오류/)).not.toBeInTheDocument()
+    expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith('/api/interview-questions', expect.objectContaining({
+      method: 'POST',
+    }))
+  })
 })
