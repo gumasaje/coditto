@@ -66,6 +66,7 @@ export function EditorPane({
 }) {
   const tree = useMemo(() => buildFileTree(files), [files])
   const bodyRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<{ focus: () => void } | null>(null)
   const [treeWidth, setTreeWidth] = useState(216)
   const locked = disabled || readOnly
 
@@ -75,15 +76,16 @@ export function EditorPane({
     setTreeWidth(Math.min(380, Math.max(132, clientX - rect.left)))
   }
 
-  const bindSourceField: OnMount = (editor) => {
-    const textarea = editor.getDomNode()?.querySelector('textarea.inputarea')
-    if (textarea instanceof HTMLTextAreaElement) textarea.id = 'source'
+  const bindEditor: OnMount = (editor) => {
+    editorRef.current = editor
   }
 
   return (
     <div className="editor-pane">
       <div className="editor-head">
-        <label htmlFor="source" className="editor-path">{activePath}</label>
+        <button type="button" className="editor-path" onClick={() => editorRef.current?.focus()}>
+          {activePath}
+        </button>
         <span className="lang">{languageFromPath(activePath)}{readOnly ? ' · 읽기 전용' : ''}</span>
       </div>
       <div ref={bodyRef} className="editor-body">
@@ -105,7 +107,7 @@ export function EditorPane({
               if (!locked && next != null) onChange(next)
             }}
             beforeMount={applyTheme}
-            onMount={bindSourceField}
+            onMount={bindEditor}
             loading={<p className="editor-loading">에디터를 불러오는 중…</p>}
             options={{
               readOnly: locked,

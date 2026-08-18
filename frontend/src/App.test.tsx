@@ -173,6 +173,15 @@ describe('workspace', () => {
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
   })
 
+  it('focuses the editor when the file path control is clicked', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    mockApi()
+    render(<App />)
+    const editor = await screen.findByLabelText('src/main/java/com/coditto/demo/RoleService.java')
+    await userEvent.click(screen.getByRole('button', { name: 'src/main/java/com/coditto/demo/RoleService.java' }))
+    expect(editor).toHaveFocus()
+  })
+
   it('switches files and keeps read-only context out of the submission source', async () => {
     window.location.hash = '#/problems/role-update-001'
     const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
