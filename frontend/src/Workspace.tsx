@@ -145,8 +145,10 @@ export function Workspace({ problemId }: { problemId: string }) {
   if (error && !problem) {
     return (
       <div className="page">
-        <SiteHeader center={<a href="#/">문제 목록</a>} />
-        <p role="alert" className="note note-error">{error}</p>
+        <SiteHeader current="workspace" center={<a href="#/problems">문제 목록</a>} />
+        <main id="main" tabIndex={-1}>
+          <p role="alert" className="note note-error">{error}</p>
+        </main>
       </div>
     )
   }
@@ -154,8 +156,10 @@ export function Workspace({ problemId }: { problemId: string }) {
   if (!problem) {
     return (
       <div className="page">
-        <SiteHeader center={<a href="#/">문제 목록</a>} />
-        <p className="note">작업공간을 불러오는 중…</p>
+        <SiteHeader current="workspace" center={<a href="#/problems">문제 목록</a>} />
+        <main id="main" tabIndex={-1}>
+          <p className="note">작업공간을 불러오는 중…</p>
+        </main>
       </div>
     )
   }
@@ -166,9 +170,10 @@ export function Workspace({ problemId }: { problemId: string }) {
   return (
     <form className="workspace" onSubmit={submit}>
       <SiteHeader
+        current="workspace"
         center={
           <nav className="crumb">
-            <a href="#/">문제 목록</a>
+            <a href="#/problems">문제 목록</a>
             <span>/</span>
             <a href={catalogHash(problem.category)}>{categoryLabel(problem.category)}</a>
             <span>/</span>
@@ -179,7 +184,7 @@ export function Workspace({ problemId }: { problemId: string }) {
           <span>{difficultyLabel(problem.difficulty)} · {problem.estimatedMinutes}분</span>
         }
       />
-      <div ref={shellRef} className="workspace-body">
+      <main id="main" tabIndex={-1} ref={shellRef} className="workspace-body">
         <div className="pane-left" style={{ width: `${leftWidth}%` }}>
           <StatementPane
             title={problem.title}
@@ -208,9 +213,9 @@ export function Workspace({ problemId }: { problemId: string }) {
             <InterviewCards status={interviewStatus} questions={questions} />
           </div>
         </div>
-      </div>
+      </main>
       <footer className="workspace-footer">
-        <a href="#/">문제 목록</a>
+        <a href="#/problems">문제 목록</a>
         <div className="footer-actions">
           {error && <p role="alert" className="danger">{error}</p>}
           <button type="submit" disabled={isSubmitting} className="submit">

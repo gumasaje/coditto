@@ -15,41 +15,38 @@ export function ProblemTable({
   }
 
   return (
-    <div className="table-wrap">
-      <table className="problem-table">
-        <thead>
-          <tr>
-            <th>문제</th>
-            <th>기술 스택</th>
-            <th>오류 유형</th>
-            <th>예상 시간</th>
-            <th>난이도</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {problems.map((problem) => {
-            const passed = passedIds.includes(problem.id)
-            return (
-              <tr key={problem.id}>
-                <td>
-                  <a className="problem-title" href={`#/problems/${problem.id}`}>{problem.title}</a>
-                  <p className="problem-cat">{categoryLabel(problem.category)}</p>
-                </td>
-                <td>{problem.stack}</td>
-                <td>{problem.bugType}</td>
-                <td>약 {problem.estimatedMinutes}분</td>
-                <td className="diff-easy">{difficultyLabel(problem.difficulty)}</td>
-                <td>
-                  <a className="status-link" href={`#/problems/${problem.id}`}>
-                    {passed ? '다시 풀기 →' : '문제 시작 →'}
-                  </a>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <table className="table">
+      <caption className="visually-hidden">문제 목록</caption>
+      <thead>
+        <tr className="row thead">
+          <th scope="col"><span className="visually-hidden">번호</span></th>
+          <th scope="col">문제</th>
+          <th className="p-meta" scope="col">오류 유형</th>
+          <th className="p-level" scope="col">난이도</th>
+          <th className="p-state" scope="col">상태</th>
+          <th scope="col"><span className="visually-hidden">이동</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {problems.map((problem, index) => {
+          const passed = passedIds.includes(problem.id)
+          return (
+            <tr className="row trow" key={problem.id}>
+              <td className="p-no">{String(index + 1).padStart(2, '0')}</td>
+              <td>
+                <a className="p-title p-row-link" href={`#/problems/${problem.id}`}>
+                  {problem.title}
+                </a>
+                <p className="p-sub">{categoryLabel(problem.category)} · {problem.stack} · 약 {problem.estimatedMinutes}분</p>
+              </td>
+              <td className="p-meta">{problem.bugType}</td>
+              <td className="p-level">{difficultyLabel(problem.difficulty)}</td>
+              <td className="p-state">{passed ? '해결' : '미해결'}</td>
+              <td className="p-go">{passed ? '다시 풀기' : '풀어보기'} <span className="arrow" aria-hidden="true">→</span></td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }

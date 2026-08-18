@@ -1,7 +1,7 @@
 import { categoryLabel } from '../copy'
 
 /**
- * 캡처 1 카테고리 탭. 활성 표시는 라임 밑줄만 남긴다.
+ * 카테고리 탭. 활성 표시는 잉크색 밑줄만 남긴다.
  */
 export function CategoryTabs({
   tabs,

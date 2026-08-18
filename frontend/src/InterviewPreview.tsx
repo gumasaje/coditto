@@ -57,9 +57,10 @@ export function InterviewPreview() {
   return (
     <div className="workspace">
       <SiteHeader
+        current="workspace"
         center={
           <nav className="crumb">
-            <a href="#/">문제 목록</a>
+            <a href="#/problems">문제 목록</a>
             <span>/</span>
             <a href={catalogHash('Backend')}>Back-End</a>
             <span>/</span>
@@ -68,7 +69,7 @@ export function InterviewPreview() {
         }
         trailing={<span>Easy · 30분</span>}
       />
-      <div ref={shellRef} className="workspace-body">
+      <main id="main" tabIndex={-1} ref={shellRef} className="workspace-body">
         <div className="pane-left" style={{ width: `${leftWidth}%` }}>
           <StatementPane
             title="회원 권한 수정 시 기존 관리자 권한이 사라져요"
@@ -103,9 +104,9 @@ export function InterviewPreview() {
             <InterviewCards status="generated" questions={PREVIEW_QUESTIONS} />
           </div>
         </div>
-      </div>
+      </main>
       <footer className="workspace-footer">
-        <a href="#/">문제 목록</a>
+        <a href="#/problems">문제 목록</a>
         <p className="mute">미리보기 · 실제 제출 없이 통과 후 카드를 보여 줍니다</p>
       </footer>
     </div>
