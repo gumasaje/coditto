@@ -7,9 +7,9 @@
   "catalog": {
     "title": "회원 권한 수정 시 기존 관리자 권한이 사라져요",
     "category": "Backend",
-    "stack": "Java · Spring",
-    "bugType": "상태 보존",
-    "estimatedMinutes": 30,
+    "stack": "Java",
+    "bugType": "조건 분기",
+    "estimatedMinutes": 15,
     "difficulty": "EASY"
   },
   "display": {
