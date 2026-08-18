@@ -8,10 +8,6 @@
 목록에서도 해당 파트를 제거하세요. 같은 파트의 다른 멤버와 다른 파트의 멤버는
 보존해야 합니다.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/bonus/MemoryMemberRepository.java
-```
+수정 가능한 파일은 `MemoryMemberRepository.java` 하나뿐입니다.
 
 Java 21과 JUnit 5 기반 공식 테스트로 동작을 검증합니다.

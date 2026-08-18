@@ -7,10 +7,6 @@
 `Assignment`가 소유한 다대일 관계를 확인하고 `Member`의 연관관계 설정을 수정하세요.
 과제가 없는 멤버의 기존 삭제 동작도 보존해야 합니다.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/likelion/springboot/member/domain/Member.java
-```
+수정 가능한 파일은 `Member.java` 하나뿐입니다.
 
 Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

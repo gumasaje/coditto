@@ -7,10 +7,6 @@
 `InvalidAssignmentRequestException`으로 거부하세요. 유효한 과제 생성과 존재하지
 않는 멤버에 대한 기존 동작은 보존해야 합니다.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/likelion/springboot/assignment/service/AssignmentService.java
-```
+수정 가능한 파일은 `AssignmentService.java` 하나뿐입니다.
 
 Java 21, Spring Data JPA와 H2 기반 공식 테스트로 동작을 검증합니다.

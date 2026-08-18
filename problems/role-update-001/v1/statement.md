@@ -5,10 +5,6 @@
 승인된 요청도 기존 역할로 되돌려 실제 역할이 바뀌지 않습니다. 읽기 전용 요청
 타입의 필드 의미를 확인한 뒤 서비스 로직을 수정하세요.
 
-수정 가능한 파일은 다음 하나뿐입니다.
-
-```text
-src/main/java/com/coditto/demo/RoleService.java
-```
+수정 가능한 파일은 `RoleService.java` 하나뿐입니다.
 
 Java 21과 제공된 Gradle/JUnit 테스트를 사용해 동작을 수정하세요.
