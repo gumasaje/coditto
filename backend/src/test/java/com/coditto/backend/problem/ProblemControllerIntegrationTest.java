@@ -19,19 +19,24 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class ProblemControllerIntegrationTest {
     private static final Map<String, List<String>> DISPLAY_FILES = Map.of(
-            "member-generation-validation-001", List.of(
-                    "src/main/java/com/likelion/springboot/member/service/MemberService.java"),
             "member-list-exposure-001", List.of(
                     "src/main/java/package2/MemoryMemberRepository.java",
                     "src/main/java/package2/MemberRepository.java"),
+            "member-name-uniqueness-001", List.of(
+                    "src/main/java/com/likelion/springboot/member/service/MemberService.java",
+                    "src/main/java/com/likelion/springboot/member/dto/MemberRenameRequest.java",
+                    "src/main/java/com/likelion/springboot/member/domain/Member.java",
+                    "src/main/java/com/likelion/springboot/member/repository/MemberRepository.java",
+                    "src/main/java/com/likelion/springboot/global/exception/DuplicateMemberException.java",
+                    "src/main/java/com/likelion/springboot/global/exception/MemberNotFoundException.java"),
             "role-update-001", List.of(
                     "src/main/java/com/coditto/demo/RoleService.java",
                     "src/main/java/com/coditto/demo/RoleChangeRequest.java"));
     private static final Map<String, String> EDITABLE_FILES = Map.of(
-            "member-generation-validation-001",
-            "src/main/java/com/likelion/springboot/member/service/MemberService.java",
             "member-list-exposure-001",
             "src/main/java/package2/MemoryMemberRepository.java",
+            "member-name-uniqueness-001",
+            "src/main/java/com/likelion/springboot/member/service/MemberService.java",
             "role-update-001",
             "src/main/java/com/coditto/demo/RoleService.java");
 
@@ -46,8 +51,8 @@ class ProblemControllerIntegrationTest {
                 .andExpect(jsonPath("$.categories[1]").value("Frontend"))
                 .andExpect(jsonPath("$.categories[2]").value("Data·AI"))
                 .andExpect(jsonPath("$.problems.length()").value(3))
-                .andExpect(jsonPath("$.problems[0].id").value("member-generation-validation-001"))
-                .andExpect(jsonPath("$.problems[1].id").value("member-list-exposure-001"))
+                .andExpect(jsonPath("$.problems[0].id").value("member-list-exposure-001"))
+                .andExpect(jsonPath("$.problems[1].id").value("member-name-uniqueness-001"))
                 .andExpect(jsonPath("$.problems[2].id").value("role-update-001"));
     }
 

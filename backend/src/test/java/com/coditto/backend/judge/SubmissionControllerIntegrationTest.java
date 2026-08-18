@@ -211,7 +211,7 @@ class SubmissionControllerIntegrationTest {
     @Test
     void writes_each_problem_source_to_its_manifest_candidate_path() throws Exception {
         assertRunnerInvocation(
-                "member-generation-validation-001",
+                "member-name-uniqueness-001",
                 "src/main/java/com/likelion/springboot/member/service/MemberService.java");
         assertRunnerInvocation(
                 "member-list-exposure-001",
