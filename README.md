@@ -101,5 +101,6 @@ python3 -B judge-runner/verify_pbl_problems.py
 - [저장소 작업 규칙](AGENTS.md)
 - [기술 아키텍처](docs/ARCHITECTURE.md)
 - [Judge 입출력 명세](docs/contracts/judge.md)
+- [가비아 VPS 첫 배포 가이드](docs/deployment.md)
 - [문제 콘텐츠 품질 기준과 재평가 기록](docs/problem-quality-issue-15.md)
 - [Issue #27 PBL 문제 선정 기록](docs/problem-selection-issue-27.md)
