@@ -1,0 +1,34 @@
+[Unit]
+Description=Coditto backend
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=coditto
+Group=coditto
+EnvironmentFile=-/etc/coditto/backend.env
+# Docker must be able to see the candidate directory that the backend creates.
+# RuntimeDirectory is on the host mount namespace; do not enable PrivateTmp here.
+RuntimeDirectory=coditto
+RuntimeDirectoryMode=0750
+Environment="JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/run/coditto"
+WorkingDirectory=/srv/coditto/current/backend
+ExecStart=/usr/bin/java -jar /srv/coditto/current/backend/build/libs/coditto-backend.jar
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+UMask=0077
+
+# The application needs its release files, /run/coditto and the Docker socket.
+# Docker-group membership is equivalent to host-root access: use a dedicated VM.
+NoNewPrivileges=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/run/coditto
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
