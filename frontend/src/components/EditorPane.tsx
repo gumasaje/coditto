@@ -18,6 +18,15 @@ import { FileTreeView } from './FileTreeView'
 import { SplitHandle } from './SplitHandle'
 
 const THEME = 'coditto'
+const MOBILE_EDITOR_QUERY = '(max-width: 860px)'
+const DESKTOP_EDITOR_FONT = { fontSize: 13, lineHeight: 24 }
+const MOBILE_EDITOR_FONT = { fontSize: 11, lineHeight: 18 }
+
+function editorFontOptions() {
+  const mobile = typeof window.matchMedia === 'function'
+    && window.matchMedia(MOBILE_EDITOR_QUERY).matches
+  return mobile ? MOBILE_EDITOR_FONT : DESKTOP_EDITOR_FONT
+}
 
 let javaImportFoldingRegistered = false
 let javaAutoImportRegistered = false
@@ -211,10 +220,14 @@ export function EditorPane({
 }) {
   const tree = useMemo(() => buildFileTree(files), [files])
   const bodyRef = useRef<HTMLDivElement>(null)
-  const editorRef = useRef<{ focus: () => void } | null>(null)
+  const editorRef = useRef<{
+    focus: () => void
+    updateOptions?: (options: { fontSize: number; lineHeight: number }) => void
+  } | null>(null)
   const lockedRef = useRef(false)
   const pathRef = useRef(activePath)
   const [treeWidth, setTreeWidth] = useState(216)
+  const [fontOptions, setFontOptions] = useState(editorFontOptions)
   const locked = disabled || readOnly
   lockedRef.current = locked
   pathRef.current = activePath
@@ -222,6 +235,18 @@ export function EditorPane({
   useEffect(() => {
     javaAutoImportCatalogRef.current = catalogForFiles(files)
   }, [files])
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia(MOBILE_EDITOR_QUERY)
+    const sync = () => {
+      const next = editorFontOptions()
+      setFontOptions(next)
+      editorRef.current?.updateOptions?.(next)
+    }
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
 
   function dragTree(clientX: number) {
     const rect = bodyRef.current?.getBoundingClientRect()
@@ -273,8 +298,8 @@ export function EditorPane({
               domReadOnly: locked,
               ariaLabel: activePath,
               fontFamily: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
-              fontSize: 13,
-              lineHeight: 24,
+              fontSize: fontOptions.fontSize,
+              lineHeight: fontOptions.lineHeight,
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
               automaticLayout: true,

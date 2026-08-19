@@ -1523,28 +1523,82 @@ a {
     right: 0;
   }
 
-  .workspace {
-    height: 100dvh;
+  /*
+   * 작업공간 모바일: 페이지가 세로로 늘고, 문제 설명은 내부 스크롤 없이
+   * 내용 높이만큼 차지한다. 에디터만 고정 높이 + Monaco 내부 스크롤.
+   * 랜딩 샷(.lp-shot)은 이 규칙을 타지 않는다.
+   */
+  .workspace:not(.lp-shot) {
+    height: auto;
+    min-height: 100dvh;
     max-width: 100vw;
+    overflow: visible;
   }
 
-  .workspace-body {
+  .workspace:not(.lp-shot) .workspace-body {
     flex-direction: column;
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: visible;
   }
 
-  .pane-left {
+  .workspace:not(.lp-shot) .pane-left {
     width: 100% !important;
-    height: min(34vh, 260px);
+    height: auto;
+    min-height: 0;
     flex: 0 0 auto;
   }
 
-  .workspace-body > .split-col {
+  .workspace:not(.lp-shot) .statement {
+    height: auto;
+  }
+
+  .workspace:not(.lp-shot) .statement-head {
+    padding: 12px 14px;
+  }
+
+  .workspace:not(.lp-shot) .statement-head h1 {
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+
+  .workspace:not(.lp-shot) .statement-body {
+    flex: none;
+    min-height: 0;
+    padding: 16px 14px;
+    overflow: visible;
+  }
+
+  .workspace:not(.lp-shot) .statement-body h2,
+  .workspace:not(.lp-shot) .statement-body p {
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+
+  .workspace:not(.lp-shot) .workspace-body > .split-col,
+  .workspace:not(.lp-shot) .editor-col > .split-row {
     display: none;
   }
 
-  .editor-col {
+  .workspace:not(.lp-shot) .editor-col {
+    width: 100%;
     min-height: 0;
-    flex: 1;
+    flex: 0 0 auto;
+  }
+
+  .workspace:not(.lp-shot) .editor-pane {
+    flex: none;
+    width: 100%;
+    height: 62dvh;
+    min-height: 22rem;
+  }
+
+  .workspace:not(.lp-shot) .editor-head {
+    padding: 8px 12px;
+  }
+
+  .workspace:not(.lp-shot) .editor-monaco {
+    overscroll-behavior: contain;
   }
 
   .file-tree-pane,
@@ -1552,8 +1606,10 @@ a {
     display: none;
   }
 
-  .result-pane {
-    min-height: 140px;
+  .workspace:not(.lp-shot) .result-pane {
+    height: auto !important;
+    min-height: 0;
+    overflow: visible;
   }
 }
 
