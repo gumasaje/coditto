@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
+import { RATE_LIMITED_ERROR } from './copy'
 
 const catalog = {
   categories: ['Backend'],
@@ -39,8 +40,9 @@ const detail = {
   },
 }
 
-const jsonResponse = (body: unknown, ok = true) => Promise.resolve({
+const jsonResponse = (body: unknown, ok = true, status = ok ? 200 : 400) => Promise.resolve({
   ok,
+  status,
   json: () => Promise.resolve(body),
 } as Response)
 
@@ -324,6 +326,30 @@ describe('workspace', () => {
     vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false))
     render(<App />)
     expect(await screen.findByRole('alert')).toHaveTextContent('error.kind: PROBLEM_NOT_FOUND')
+  })
+
+  it('shows a rate-limit notice instead of a judge result when a submission is throttled', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') {
+        return jsonResponse({ error: { kind: 'RATE_LIMITED' } }, false, 429)
+      }
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByRole('alert')).toHaveTextContent(RATE_LIMITED_ERROR)
+    expect(screen.queryByText('COMPLETED')).not.toBeInTheDocument()
+  })
+
+  it('shows a rate-limit notice when the problem request is throttled', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'RATE_LIMITED' } }, false, 429))
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent(RATE_LIMITED_ERROR)
   })
 
   it('sends problemId, version, and source in the contract request body', async () => {
