@@ -88,7 +88,7 @@ describe('home', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
-    expect(screen.getAllByText('src/main/java/com/coditto/demo/RoleService.java').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('RoleService.java').length).toBeGreaterThan(0)
     expect(screen.getByText('테스트 실패 (목표)')).toBeInTheDocument()
     expect(screen.getAllByText(/실행 결과/).length).toBeGreaterThan(0)
     expect(screen.queryByText('입력값')).not.toBeInTheDocument()
