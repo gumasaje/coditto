@@ -1,3 +1,9 @@
+# Nginx terminates every public request and proxies to this process on the
+# loopback interface. Binding the wildcard address would expose the submission
+# endpoint directly and bypass the Nginx request limits.
+server:
+  address: 127.0.0.1
+
 coditto:
   problems:
     root-path: ../problems
