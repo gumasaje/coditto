@@ -1203,7 +1203,7 @@ a {
 }
 
 .test-msg.is-fail { color: var(--danger); }
-.test-msg.is-pass { color: var(--dusty-denim); }
+.test-msg.is-pass { color: var(--acid); }
 
 .submit {
   padding: 8px 16px;

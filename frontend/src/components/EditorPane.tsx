@@ -8,6 +8,7 @@ import {
   catalogForFiles,
   insertJavaImports,
   isJavaImportNeeded,
+  JavaImportCatalog,
   shouldAttemptJavaAutoImport,
   textEditBetween,
 } from '../javaAutoImport'
@@ -20,7 +21,7 @@ const THEME = 'coditto'
 
 let javaImportFoldingRegistered = false
 let javaAutoImportRegistered = false
-const javaAutoImportFilesRef: { current: ProblemFile[] } = { current: [] }
+const javaAutoImportCatalogRef: { current: JavaImportCatalog } = { current: catalogForFiles([]) }
 let javaAutoImportListener: { dispose: () => void } | null = null
 
 function registerJavaImportFolding(monaco: Monaco) {
@@ -62,7 +63,7 @@ function registerJavaAutoImport(monaco: Monaco) {
       const prefix = word.word
       if (!prefix) return { suggestions: [] }
       const source = model.getValue()
-      const catalog = catalogForFiles(javaAutoImportFilesRef.current)
+      const catalog = javaAutoImportCatalogRef.current
       const range = {
         startLineNumber: position.lineNumber,
         startColumn: word.startColumn,
@@ -118,14 +119,14 @@ function bindJavaAutoImport(
   let debounceTimer: number | undefined
   const sub = instance.onDidChangeModelContent((event) => {
     if (applying || locked.current || event.isUndoing || event.isRedoing) return
-    const catalog = catalogForFiles(javaAutoImportFilesRef.current)
+    const catalog = javaAutoImportCatalogRef.current
     if (!event.changes.some((change) => shouldAttemptJavaAutoImport(change.text, catalog))) return
     window.clearTimeout(debounceTimer)
     debounceTimer = window.setTimeout(() => {
       const model = instance.getModel()
       if (!model || locked.current || !isJavaModel(model, path.current)) return
       const source = model.getValue()
-      const next = applyMissingJavaImports(source, catalogForFiles(javaAutoImportFilesRef.current))
+      const next = applyMissingJavaImports(source, javaAutoImportCatalogRef.current)
       const edit = textEditBetween(source, next)
       if (!edit) return
       applying = true
@@ -219,7 +220,7 @@ export function EditorPane({
   pathRef.current = activePath
 
   useEffect(() => {
-    javaAutoImportFilesRef.current = files
+    javaAutoImportCatalogRef.current = catalogForFiles(files)
   }, [files])
 
   function dragTree(clientX: number) {
