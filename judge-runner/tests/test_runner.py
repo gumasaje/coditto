@@ -30,6 +30,7 @@ from coditto_judge.runner import (  # noqa: E402
     execute,
     load_manifest,
     main,
+    make_mount_tree_readable,
     parse_args,
     preflight_suite_sources,
     resolve_problem_dir,
@@ -106,16 +107,24 @@ class RunnerContractTest(unittest.TestCase):
                 suite_sources,
             )
 
-    def test_container_mount_roots_remain_readable_with_restrictive_umask(self) -> None:
+    def test_container_mount_tree_remains_readable_with_restrictive_umask(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_dir:
             previous_umask = os.umask(0o077)
             try:
                 workspace, judge_tests = create_container_mount_directories(Path(temporary_dir))
+                nested_directory = workspace / "src/main/java"
+                nested_directory.mkdir(parents=True)
+                source = nested_directory / "RoleService.java"
+                source.write_text("class RoleService {}", encoding="utf-8")
             finally:
                 os.umask(previous_umask)
 
+            make_mount_tree_readable(workspace)
+            make_mount_tree_readable(judge_tests)
             self.assertEqual(workspace.stat().st_mode & 0o777, 0o755)
             self.assertEqual(judge_tests.stat().st_mode & 0o777, 0o755)
+            self.assertEqual(nested_directory.stat().st_mode & 0o777, 0o755)
+            self.assertEqual(source.stat().st_mode & 0o777, 0o644)
 
     def test_preflight_builds_target_and_regression_source_map(self) -> None:
         self.assertEqual(

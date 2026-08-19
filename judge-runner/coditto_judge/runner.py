@@ -264,6 +264,17 @@ def create_container_mount_directories(temporary_dir: Path) -> tuple[Path, Path]
     return workspace, judge_tests
 
 
+def make_mount_tree_readable(root: Path) -> None:
+    """Grant the non-root Judge user read access to an assembled mount tree."""
+    for directory, _, names in os.walk(root, followlinks=False):
+        directory_path = Path(directory)
+        directory_path.chmod(directory_path.stat().st_mode | 0o055)
+        for name in names:
+            path = directory_path / name
+            if path.is_file() and not path.is_symlink():
+                path.chmod(path.stat().st_mode | 0o044)
+
+
 def _remove_container(container_name: str) -> None:
     try:
         subprocess.run(
@@ -412,6 +423,8 @@ def execute(
             suite_sources = preflight_suite_sources(problem_dir)
             assemble_workspace(problem_dir, candidate_dir, workspace)
             assemble_judge_tests(problem_dir, judge_tests, suite_sources)
+            make_mount_tree_readable(workspace)
+            make_mount_tree_readable(judge_tests)
             command = build_docker_command(
                 manifest["runtime"]["image"], workspace, judge_tests, container_name
             )
