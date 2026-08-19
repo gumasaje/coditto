@@ -254,6 +254,18 @@ def run_command_bounded(command: list[str], remaining_bytes: int) -> tuple[int, 
         process.stdout.close()
 
 
+def has_junit_xml(xml_results_dir: Path) -> bool:
+    """Report whether Gradle produced any JUnit XML at all.
+
+    This mirrors the discovery that evaluate_junit_results performs, so both
+    agree on what "the test task produced no results" means.
+    """
+    try:
+        return any(xml_results_dir.glob("*.xml"))
+    except OSError as exc:
+        raise ParserInfrastructureError("JUnit XML directory is unreadable") from exc
+
+
 def main() -> int:
     used_output_bytes = 0
     compile_command = [
@@ -261,7 +273,7 @@ def main() -> int:
         "--offline",
         "--no-daemon",
         "--console=plain",
-        "--max-workers=1",
+        "--max-workers=2",
         "compileJava",
         "compileTestJava",
     ]
@@ -270,23 +282,16 @@ def main() -> int:
         "--offline",
         "--no-daemon",
         "--console=plain",
-        "--max-workers=1",
+        "--max-workers=2",
         "test",
     ]
 
     try:
-        print("judge stage: compile", file=sys.stderr)
-        compile_status, consumed, exceeded = run_command_bounded(
-            compile_command, OUTPUT_LIMIT_BYTES - used_output_bytes
-        )
-        used_output_bytes += consumed
-        if exceeded:
-            print("judge result: resource limited", file=sys.stderr)
-            return 26
-        if compile_status != 0:
-            print("judge result: compile failed", file=sys.stderr)
-            return 20
-
+        # The test task already depends on compilation, so a second Gradle
+        # invocation only pays the daemon-less JVM start twice. Run tests first
+        # and fall back to a compile-only run when, and only when, the build
+        # failed without producing any JUnit XML. That is the one case where
+        # compile failure and infrastructure fault are still indistinguishable.
         print("judge stage: test", file=sys.stderr)
         test_status, consumed, exceeded = run_command_bounded(
             test_command, OUTPUT_LIMIT_BYTES - used_output_bytes
@@ -295,6 +300,19 @@ def main() -> int:
         if exceeded:
             print("judge result: resource limited", file=sys.stderr)
             return 26
+
+        if test_status != 0 and not has_junit_xml(XML_RESULTS_DIR):
+            print("judge stage: compile", file=sys.stderr)
+            compile_status, consumed, exceeded = run_command_bounded(
+                compile_command, OUTPUT_LIMIT_BYTES - used_output_bytes
+            )
+            used_output_bytes += consumed
+            if exceeded:
+                print("judge result: resource limited", file=sys.stderr)
+                return 26
+            if compile_status != 0:
+                print("judge result: compile failed", file=sys.stderr)
+                return 20
 
         target, regression = evaluate_junit_results(
             XML_RESULTS_DIR, SOURCE_MAP_PATH, test_status
