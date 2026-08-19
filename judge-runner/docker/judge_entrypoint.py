@@ -268,23 +268,20 @@ def has_junit_xml(xml_results_dir: Path) -> bool:
 
 def main() -> int:
     used_output_bytes = 0
-    compile_command = [
+    # The build JVM lives for a single judge run, so C2 never repays its own
+    # warm-up here. This flag applies to Gradle's own JVM only: the Test task
+    # forks a separate JVM for candidate code, which keeps full JIT.
+    build_jvm_args = "-Dorg.gradle.jvmargs=-XX:TieredStopAtLevel=1"
+    gradle_command = [
         "gradle",
         "--offline",
         "--no-daemon",
         "--console=plain",
         "--max-workers=2",
-        "compileJava",
-        "compileTestJava",
+        build_jvm_args,
     ]
-    test_command = [
-        "gradle",
-        "--offline",
-        "--no-daemon",
-        "--console=plain",
-        "--max-workers=2",
-        "test",
-    ]
+    compile_command = [*gradle_command, "compileJava", "compileTestJava"]
+    test_command = [*gradle_command, "test"]
 
     try:
         # The test task already depends on compilation, so a second Gradle
