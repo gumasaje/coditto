@@ -44,7 +44,7 @@ PostgreSQL, 인증, browser IDE, 최종 UI, queue, A–E/Mutant 평가, 생성 �
 python3 judge-runner/run.py --candidate judge-runner/testdata/fixed
 ```
 
-Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 정규화된 Docker·stage 진단은 stderr로 분리합니다. compile 단계와 test 단계를 별도 Gradle 실행과 exit code로 구분하며, 단일 test 실행의 JUnit XML을 immutable parser가 target/regression suite로 사후 배정합니다. 결과 형태는 [Judge 입출력 명세](contracts/judge.md)를 따릅니다.
+Runner는 stdout에 기계가 읽는 JSON 하나만 출력하고 정규화된 Docker·stage 진단은 stderr로 분리합니다. test 실행 하나로 compile과 test를 함께 수행하고, build가 실패하면서 JUnit XML이 하나도 없을 때만 compile 전용 실행을 덧붙여 `COMPILE_FAILED`와 infrastructure fault를 구분합니다. 단일 test 실행의 JUnit XML은 immutable parser가 target/regression suite로 사후 배정합니다. 결과 형태는 [Judge 입출력 명세](contracts/judge.md)를 따릅니다.
 
 `judge-runner/verify_spike.py`는 Judge 이미지를 빌드한 뒤 네 candidate를 각각 3회 실행합니다. 기대한 `execution`과 `suites`, 정규화된 JSON의 반복 일치, test 상세 비노출, 실제 `--network none`과 mount 경계, non-root 이미지, 남은 container가 없는지를 함께 검사합니다.
 
@@ -95,7 +95,7 @@ Issue #1은 로컬 또는 신뢰하는 데모 입력으로 수행한 기술 검�
 - 실제 compile과 test는 `gradle --offline --no-daemon`으로 실행합니다. host Gradle cache, credential directory, Docker socket은 mount하지 않습니다.
 - candidate workspace와 official test directory만 각각 read-only bind mount로 전달하며, container root filesystem은 `--read-only`입니다.
 - container network는 `--network none`, 실행 user는 `1000:1000`, capability는 `ALL` drop, `no-new-privileges`를 적용했습니다.
-- 측정해 적용한 제한은 CPU 1, memory 768 MiB, `memory-swap` 768 MiB, PID 128, `nofile` 1024, timeout 60초, captured output 1 MiB입니다. `memory-swap`은 memory를 포함한 총 상한이므로 추가 swap은 없습니다.
+- 측정해 적용한 제한은 CPU 2, memory 768 MiB, `memory-swap` 768 MiB, PID 128, `nofile` 1024, timeout 60초, captured output 1 MiB입니다. CPU 상한은 예약이 아니라 상한이므로, 전역 동시 실행 제한이 없는 현재 상태에서 제출이 겹치면 각 container가 그만큼 느려집니다. `memory-swap`은 memory를 포함한 총 상한이므로 추가 swap은 없습니다.
 - writable 영역은 `/tmp` 64 MiB와 `/workspace` 512 MiB의 tmpfs로 제한했습니다.
 - host cache를 mount하지 않은 조건에서 offline Gradle 실행을 확인했고, 모든 종료 경로에서 temporary directory와 Judge container cleanup을 검증했습니다.
 - raw Gradle output은 immutable entrypoint의 합산 1 MiB bounded sink에서 소비하고 host로 전달하지 않습니다. DTD와 entity를 거부하는 trusted parser가 JUnit XML을 읽고 예약 exit code로만 suite 판정을 전달합니다.

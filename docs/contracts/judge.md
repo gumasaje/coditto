@@ -54,7 +54,7 @@ problem request 또는 candidate가 이 입력 계약을 위반하면 사용자 
 
 각 실행은 immutable base와 검증된 candidate로 깨끗한 temporary workspace를 만듭니다. official test는 별도 temporary directory에 준비하고 candidate workspace와 각각 read-only mount로 전달합니다. container 안에서는 `/workspace` tmpfs에 candidate project를 복사하며 official test는 `/judge-tests` read-only mount에서 참조합니다.
 
-Judge image는 Gradle 8.10.2 distribution과 demo의 JUnit runtime dependency를 build 단계에서 준비합니다. 실행 시 image의 cache seed를 writable tmpfs로 복사하고 compile과 test를 각각 `gradle --offline --no-daemon`으로 실행합니다. host Gradle home, host credential directory, Docker socket은 mount하지 않습니다.
+Judge image는 Gradle 8.10.2 distribution과 demo의 JUnit runtime dependency를 build 단계에서 준비합니다. 실행 시 image의 cache seed를 writable tmpfs로 복사하고 `gradle --offline --no-daemon test`를 한 번 실행합니다. test task가 compile에 의존하므로 통과·실패 경로는 Gradle을 한 번만 기동하며, build가 실패하면서 JUnit XML이 하나도 생성되지 않은 경우에만 compile 전용 실행을 덧붙입니다. host Gradle home, host credential directory, Docker socket은 mount하지 않습니다.
 
 Phase A에서 실제 적용하고 검증한 제한은 다음과 같습니다.
 
@@ -227,7 +227,7 @@ compile 단계에서 판정이 끝난 응답입니다. test suite를 판정하�
 
 ## 알려진 한계
 
-- 현재 compile 단계의 non-zero exit는 `COMPILE_FAILED`로 정규화합니다. 따라서 Gradle daemon startup처럼 compile 단계에서 발생한 일부 infrastructure fault가 `COMPILE_FAILED`로 분류될 수 있습니다.
+- JUnit XML 없이 build가 실패한 뒤 덧붙이는 compile 전용 실행의 non-zero exit는 `COMPILE_FAILED`로 정규화합니다. 따라서 Gradle daemon startup처럼 compile 단계에서 발생한 일부 infrastructure fault가 `COMPILE_FAILED`로 분류될 수 있습니다.
 - Phase A는 공개 demo와 로컬 또는 신뢰하는 입력의 기술 검증입니다. Docker와 위 제한만으로 production-grade arbitrary untrusted code security를 주장하지 않습니다.
 - Judge image digest pinning, private problem pack, stronger isolation과 production resource policy는 TODO입니다.
 

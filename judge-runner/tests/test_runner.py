@@ -200,7 +200,7 @@ class RunnerContractTest(unittest.TestCase):
         self.assertIn("--user 1000:1000", rendered)
         self.assertIn("--cap-drop ALL", rendered)
         self.assertIn("--security-opt no-new-privileges", rendered)
-        self.assertIn("--cpus 1.0", rendered)
+        self.assertIn("--cpus 2.0", rendered)
         self.assertIn("--memory 768m", rendered)
         self.assertIn("--pids-limit 128", rendered)
         self.assertIn("--ulimit nofile=1024:1024", rendered)
