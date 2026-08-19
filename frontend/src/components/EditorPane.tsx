@@ -15,7 +15,11 @@ function registerJavaImportFolding(monaco: Monaco) {
   if (javaImportFoldingRegistered) return
   javaImportFoldingRegistered = true
   monaco.languages.registerFoldingRangeProvider('java', {
+<<<<<<< Updated upstream
     provideFoldingRanges(model: { getValue(): string }) {
+=======
+    provideFoldingRanges(model) {
+>>>>>>> Stashed changes
       const range = findJavaImportFoldRange(model.getValue())
       if (!range) return []
       return [{

@@ -61,6 +61,7 @@ describe('withoutEditableFileGuidance', () => {
     ].join('\n'))
   })
 
+<<<<<<< Updated upstream
   it('removes the published inline filename guidance from display', () => {
     const source = [
       '# 역할 변경 승인 버그',
@@ -83,13 +84,18 @@ describe('withoutEditableFileGuidance', () => {
     ].join('\n'))
   })
 
+=======
+>>>>>>> Stashed changes
   it('leaves unrelated code fences in place', () => {
     const source = '# 제목\n\n```text\nnot-a-path\n```\n'
     expect(withoutEditableFileGuidance(source, [path])).toBe(source)
   })
+<<<<<<< Updated upstream
 
   it('leaves inline guidance that names a file outside the editable set', () => {
     const source = '수정 가능한 파일은 `Secret.java` 하나뿐입니다.\n'
     expect(withoutEditableFileGuidance(source, [path])).toBe(source)
   })
+=======
+>>>>>>> Stashed changes
 })

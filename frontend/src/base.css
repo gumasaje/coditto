@@ -8,7 +8,7 @@
   --surface-hover: #f3f3f1;
   --danger: #e07070;
   --font-sans: Pretendard, "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", Pretendard, "IBM Plex Sans KR", ui-monospace, SFMono-Regular, Menlo, monospace;
   --shell: 960px;
   --gutter: 40px;
   --void: var(--ink-black);
@@ -109,7 +109,7 @@ a {
 .nav-inner {
   display: flex;
   align-items: center;
-  height: 58px;
+  height: 64px;
   padding: 0 20px;
 }
 
@@ -156,7 +156,7 @@ a {
 .nav-link {
   display: flex;
   align-items: center;
-  height: 58px;
+  height: 64px;
   padding: 0 20px;
   color: var(--dusty-denim);
   font-size: 13.5px;
@@ -742,10 +742,10 @@ a {
   padding: 0 0 12px;
   border-bottom: 1px solid var(--dusk-blue);
   color: var(--dusk-blue);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
 }
 
 .thead th {
@@ -809,7 +809,8 @@ a {
   line-height: 1.55;
 }
 
-.p-sub { margin-top: 6px; font-size: 12px; }
+.p-sub { margin-top: 6px; font-family: var(--font-sans); font-size: 12px; }
+.p-meta { font-family: var(--font-sans); }
 .p-level { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
 
 .p-go {
@@ -1423,7 +1424,10 @@ a {
   }
 }
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 @media (max-width: 860px) {
   :root { --gutter: 24px; }
   .hero-title { font-size: 26px; }

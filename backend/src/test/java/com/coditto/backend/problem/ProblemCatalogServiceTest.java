@@ -135,7 +135,11 @@ class ProblemCatalogServiceTest {
         ProblemCatalogService service = new ProblemCatalogService(
                 new ProblemProperties(temporaryDirectory.resolve("missing").toString()), objectMapper);
 
+<<<<<<< Updated upstream
         Assertions.assertThat(service.catalog().categories()).containsExactly("Backend");
+=======
+        Assertions.assertThat(service.catalog().categories()).containsExactly("Backend", "Data·AI");
+>>>>>>> Stashed changes
         Assertions.assertThat(service.catalog().problems()).isEmpty();
     }
 

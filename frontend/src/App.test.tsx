@@ -5,17 +5,31 @@ import { App } from './App'
 import { RATE_LIMITED_ERROR } from './copy'
 
 const catalog = {
+<<<<<<< Updated upstream
   categories: ['Backend'],
+=======
+  categories: ['Backend', 'Data·AI'],
+>>>>>>> Stashed changes
   problems: [
     {
       id: 'role-update-001',
       version: 1,
       title: '회원 권한 수정 시 기존 관리자 권한이 사라져요',
       category: 'Backend',
-      stack: 'Java · Spring',
-      bugType: '상태 보존',
-      estimatedMinutes: 30,
+      stack: 'Java',
+      bugType: '조건 분기',
+      estimatedMinutes: 15,
       difficulty: 'EASY',
+    },
+    {
+      id: 'member-name-uniqueness-001',
+      version: 1,
+      title: '멤버 이름 변경 후 중복 이름이 생겨요',
+      category: 'Backend',
+      stack: 'Java · Spring',
+      bugType: '중복 검증',
+      estimatedMinutes: 30,
+      difficulty: 'MEDIUM',
     },
   ],
 }
@@ -26,8 +40,13 @@ const detail = {
   title: '회원 권한 수정 시 기존 관리자 권한이 사라져요',
   category: 'Backend',
   difficulty: 'EASY',
+<<<<<<< Updated upstream
   estimatedMinutes: 30,
   statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n수정 가능한 파일은 `RoleService.java` 하나뿐입니다.\n',
+=======
+  estimatedMinutes: 15,
+  statement: '# 역할 변경 승인 버그\n\n`RoleService.updateRole`은 승인된 요청을 반영해야 합니다.\n\n```text\nsrc/main/java/com/coditto/demo/RoleService.java\n```\n',
+>>>>>>> Stashed changes
   files: [{
     path: 'src/main/java/com/coditto/demo/RoleService.java',
     editable: true,
@@ -89,8 +108,11 @@ describe('home', () => {
     expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
     expect(screen.getAllByText('src/main/java/com/coditto/demo/RoleService.java').length).toBeGreaterThan(0)
+<<<<<<< Updated upstream
     expect(screen.getByText('목표: 통과')).toBeInTheDocument()
     expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+=======
+>>>>>>> Stashed changes
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
@@ -110,6 +132,7 @@ describe('catalog', () => {
     expect(screen.getByRole('columnheader', { name: '오류 유형' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: '난이도' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: '상태' })).toBeInTheDocument()
+<<<<<<< Updated upstream
     expect(screen.getByText(/Java · Spring/)).toBeInTheDocument()
     expect(screen.getAllByText('상태 보존').length).toBeGreaterThan(0)
     expect(screen.getByText(/약 30분/)).toBeInTheDocument()
@@ -117,14 +140,33 @@ describe('catalog', () => {
   })
 
   it('renders only categories returned by the catalog', async () => {
+=======
+    expect(screen.getAllByText(/Java · 약 15분/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Java · Spring/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('조건 분기').length).toBeGreaterThan(0)
+    expect(screen.getByText(/약 15분/)).toBeInTheDocument()
+    expect(screen.getAllByText('Easy').length).toBeGreaterThan(0)
+  })
+
+  it('filters by category picker and shows an empty state', async () => {
+>>>>>>> Stashed changes
     mockApi()
     render(<App />)
     await screen.findByRole('link', { name: /회원 권한 수정/ })
     await userEvent.click(screen.getByRole('button', { name: '카테고리, 전체' }))
+<<<<<<< Updated upstream
     expect(screen.getByRole('option', { name: '전체' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Back-End' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Front-End' })).not.toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Data·AI' })).not.toBeInTheDocument()
+=======
+    await userEvent.click(screen.getByRole('option', { name: 'Data·AI' }))
+    expect(screen.getByText('이 카테고리에 준비된 문제가 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '카테고리, Data·AI' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Back-End' }))
+    expect(screen.getByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+>>>>>>> Stashed changes
   })
 
   it('groups catalog filters into stack, bug type, and difficulty', async () => {
@@ -133,38 +175,36 @@ describe('catalog', () => {
     await screen.findByRole('link', { name: /회원 권한 수정/ })
     await userEvent.click(screen.getByRole('button', { name: '기술 스택, 전체' }))
     expect(screen.getByRole('listbox', { name: '기술 스택' })).toBeInTheDocument()
+<<<<<<< Updated upstream
     expect(screen.getByRole('option', { name: 'Java · Spring' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '오류 유형, 전체' }))
     expect(screen.getByRole('listbox', { name: '오류 유형' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: '상태 보존' })).toBeInTheDocument()
+=======
+    expect(screen.getByRole('option', { name: /^Java$/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Java · Spring' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '오류 유형, 전체' }))
+    expect(screen.getByRole('listbox', { name: '오류 유형' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: '조건 분기' })).toBeInTheDocument()
+>>>>>>> Stashed changes
     await userEvent.click(screen.getByRole('button', { name: '난이도, 전체' }))
     expect(screen.getByRole('option', { name: 'Easy' })).toBeInTheDocument()
   })
 
   it('applies section filters independently', async () => {
-    vi.spyOn(window, 'fetch').mockImplementation((input) => {
-      if (String(input) !== '/api/problems') return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
-      return jsonResponse({
-        categories: ['Backend'],
-        problems: [
-          catalog.problems[0],
-          {
-            ...catalog.problems[0],
-            id: 'member-query-001',
-            title: '전체 멤버 조회 후 저장된 멤버가 사라져요',
-            stack: 'Java',
-            bugType: '상태 노출',
-            difficulty: 'MEDIUM',
-          },
-        ],
-      })
-    })
+    mockApi()
     render(<App />)
     await screen.findByRole('link', { name: /회원 권한 수정/ })
     await userEvent.click(screen.getByRole('button', { name: '기술 스택, 전체' }))
+<<<<<<< Updated upstream
     await userEvent.click(screen.getByRole('option', { name: /^Java$/ }))
     expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /전체 멤버 조회/ })).toBeInTheDocument()
+=======
+    await userEvent.click(screen.getByRole('option', { name: 'Java · Spring' }))
+    expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /멤버 이름 변경/ })).toBeInTheDocument()
+>>>>>>> Stashed changes
     await userEvent.click(screen.getByRole('button', { name: '난이도, 전체' }))
     expect(screen.getByRole('option', { name: 'Normal' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('option', { name: 'Easy' }))
@@ -200,8 +240,12 @@ describe('catalog', () => {
     render(<App />)
     expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
+<<<<<<< Updated upstream
     expect(screen.getByText('목표: 통과')).toBeInTheDocument()
     expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+=======
+    expect(screen.getByText('TESTS_PASSED')).toBeInTheDocument()
+>>>>>>> Stashed changes
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     expect(screen.getByText('approved가 false일 때 반환값을 바꾸면 안 되는 이유는 무엇인가요?')).toBeInTheDocument()
     expect(screen.getByText('두 분기가 같은 값을 반환하면 조건문은 어떤 의미가 없나요?')).toBeInTheDocument()
@@ -233,7 +277,10 @@ describe('workspace', () => {
     expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
     const badge = within(screen.getByRole('group', { name: '수정 가능한 파일' })).getByRole('button', { name: 'RoleService.java' })
     expect(badge).toHaveAttribute('title', 'src/main/java/com/coditto/demo/RoleService.java')
+<<<<<<< Updated upstream
     expect(screen.queryByText(/수정 가능한 파일은/)).not.toBeInTheDocument()
+=======
+>>>>>>> Stashed changes
     expect(screen.queryByText('src/main/java/com/coditto/demo/RoleService.java', { selector: 'code' })).not.toBeInTheDocument()
   })
 

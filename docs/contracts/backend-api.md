@@ -86,7 +86,11 @@ DB가 필요해지는 시점은 다음 중 하나가 확정될 때이고, 그 �
 
 ```json
 {
+<<<<<<< Updated upstream
   "categories": ["Backend"],
+=======
+  "categories": ["Backend", "Data·AI"],
+>>>>>>> Stashed changes
   "problems": [
     {
       "id": "role-update-001",

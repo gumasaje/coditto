@@ -11,7 +11,6 @@ export function difficultyLabel(value: string): string {
 
 export function categoryLabel(value: string): string {
   if (value === 'Backend') return 'Back-End'
-  if (value === 'Frontend') return 'Front-End'
   return value
 }
 
