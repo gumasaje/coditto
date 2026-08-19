@@ -10,7 +10,7 @@
 
 ```text
 Internet
-  -> Nginx :443 (TLS, React static files)
+  -> Nginx :80, :443 (React static files; 도메인 배정 전에는 둘 다 평문 HTTP)
        -> /api/* -> Spring Boot :8080 (loopback only)
                         -> Python Runner -> Docker Judge container
 ```
@@ -22,6 +22,7 @@ Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정�
 - Ubuntu 24.04 LTS 같은 지원 중인 Linux VPS, 최소 2 vCPU / 4 GiB RAM / 40 GiB 디스크
 - SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 도메인 A/AAAA 레코드는 HTTPS 공개 전에 필요하다.
 - `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용
+- 사업자가 inbound `80/tcp`를 막는 VPS가 있다. 현재 해커톤 서버가 그 경우이므로 공개 진입점은 `443`이고, 아래 Nginx 설정은 `80`과 `443`을 함께 listen한다.
 - Docker Engine, Java 21 runtime, Python 3, Nginx, Certbot 설치
 - Docker를 실행하는 전용 `coditto` Linux 계정. 이 계정을 `docker` group에 넣는 것은 root 권한에 준하는 접근을 준다는 것을 이해해야 한다.
 
@@ -36,6 +37,7 @@ sudo adduser --system --group --home /srv/coditto coditto
 sudo usermod -aG docker coditto
 sudo install -d -o coditto -g coditto -m 0750 /srv/coditto
 sudo -u coditto git clone https://github.com/gumasaje/coditto.git /srv/coditto/current
+sudo chmod 0750 /srv/coditto/current
 
 cd /srv/coditto/current/backend
 ./gradlew bootJar
@@ -45,6 +47,8 @@ cd ../frontend
 npm ci
 npm run build
 ```
+
+`git clone`은 umask에 따라 world-readable 트리를 만들 수 있다. 릴리스 트리에는 `judge-only/` 공식 test가 들어 있으므로 `0750`으로 맞춰 서비스 계정과 Nginx group만 읽게 한다.
 
 Node.js는 Frontend build 단계에만 필요하다. 정적 `frontend/dist`를 Nginx가 직접 제공하므로 런타임 Node 서버는 띄우지 않는다.
 
@@ -73,25 +77,28 @@ sudo systemctl enable --now coditto-backend
 sudo systemctl status coditto-backend
 ```
 
+`CODITTO_RUNNER_TIMEOUT`은 API가 Runner process를 기다리는 상한이며, Judge container 자체의 실행 상한이 아니다. container 상한은 Runner가 소유하고 [기술 아키텍처](ARCHITECTURE.md)에 기록한 60초이며, 두 값의 차이는 Runner가 판정을 정규화하고 container를 정리할 여유로 남긴다. 그래서 API가 먼저 포기하면 `TIMED_OUT`이 아니라 `SYSTEM_FAILED`가 되므로 `CODITTO_RUNNER_TIMEOUT`을 60초 이하로 낮추지 않는다.
+
 `/etc/coditto/backend.env`의 `CODITTO_PROBLEMS_ROOT_PATH`와 `CODITTO_RUNNER_SCRIPT_PATH`는 반드시 절대 경로여야 한다. `OPENAI_API_KEY`는 선택 사항이며, 없으면 면접 질문 기능만 `UNAVAILABLE`이 되고 Judge는 계속 동작한다.
 
 서비스는 candidate 임시 파일을 `/run/coditto`에 만든다. Docker daemon이 그 경로를 bind-mount해서 Judge에 전달해야 하므로 systemd `PrivateTmp=true`를 사용하면 안 된다.
 
 ## 공인 IP 임시 공개
 
-도메인이 아직 없을 때는 이 설정으로 `http://<공인-IP>`에 Frontend와 모든 API를 공개할 수 있다. 해커톤 제출 URL은 이 HTTP 주소를 사용한다. 설정은 dedicated VPS의 모든 HTTP host를 받도록 `default_server`와 `server_name _`를 사용한다. 다른 사이트를 같은 VPS에서 운영한다면 이 설정을 그대로 사용하지 말고 별도 virtual host를 구성한다.
+도메인이 아직 없을 때는 이 설정으로 공인 IP에 Frontend와 모든 API를 공개할 수 있다. 현재 서버는 inbound `80/tcp`가 닿지 않으므로 **해커톤 제출 URL은 포트를 포함한 `http://<공인-IP>:443`을 사용한다.** 이 `443`은 평문 HTTP이며 TLS가 아니므로 `https://<공인-IP>`는 동작하지 않는다. 설정은 dedicated VPS의 모든 HTTP host를 받도록 `default_server`와 `server_name _`를 사용한다. 다른 사이트를 같은 VPS에서 운영한다면 이 설정을 그대로 사용하지 말고 별도 virtual host를 구성한다.
 
-`/api/submissions`는 Judge를 실행하는 공개 endpoint다. Nginx는 IP당 분당 5회, burst 2회와 동시 연결 2개로 제한하지만, 이는 운영 기본선일 뿐 사용자별 quota·전역 queue·강한 격리를 대체하지 않는다.
+`/api/submissions`는 Judge를 실행하는 공개 endpoint다. Nginx는 IP당 분당 5회, burst 2회와 동시 연결 2개로 제한하지만, 이는 운영 기본선일 뿐 사용자별 quota·전역 queue·강한 격리를 대체하지 않는다. 제한을 넘긴 요청은 `429`와 `{"error":{"kind":"RATE_LIMITED"}}`를 받는다.
 
 ```bash
 sudo install -m 0644 /srv/coditto/current/deploy/nginx/coditto.conf \
   /etc/nginx/sites-available/coditto
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/coditto /etc/nginx/sites-enabled/coditto
+sudo usermod -aG coditto www-data
 sudo nginx -t
-sudo systemctl reload nginx
+sudo systemctl restart nginx
 
-curl --fail http://<공인-IP>/api/problems
+curl --fail http://<공인-IP>:443/api/problems
 ```
 
 ## 도메인과 TLS
@@ -106,7 +113,7 @@ sudo systemctl reload nginx
 sudo certbot --nginx -d example.com
 ```
 
-TLS 적용 후에는 Certbot이 만드는 HTTP -> HTTPS redirect와 certificate 설정을 유지한다.
+Certbot을 실행하기 전에 `deploy/nginx/coditto.conf`의 평문 `listen 443`을 제거한다. 남겨 두면 Certbot이 추가하는 TLS listener와 같은 포트에서 충돌한다. TLS 적용 후에는 Certbot이 만드는 HTTP -> HTTPS redirect와 certificate 설정을 유지한다.
 
 ## 배포 전 검증
 
@@ -123,7 +130,7 @@ cd ../frontend && npm test && npm run build
 cd .. && git diff --check
 
 curl --fail http://127.0.0.1:8080/api/problems
-curl --fail http://<공인-IP>/api/problems
+curl --fail http://<공인-IP>:443/api/problems
 ```
 
 `verify_pbl_problems.py`는 66개의 실제 Judge 실행을 수행하므로 서버 사양이 작으면 오래 걸릴 수 있다. 문제 이미지 또는 Runner 격리 정책이 바뀌었을 때는 생략하지 않는다.
