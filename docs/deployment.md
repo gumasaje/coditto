@@ -23,7 +23,7 @@ Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정�
 - SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 도메인 A/AAAA 레코드는 HTTPS 공개 전에 필요하다.
 - 목표 상태는 `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용하는 것이다. 현재 해커톤 서버는 아직 그 상태가 아니다. 아래 "현재 방화벽 상태"를 확인한다.
 - 사업자가 inbound `80/tcp`를 막는 VPS가 있다. 현재 해커톤 서버가 그 경우이므로 공개 진입점은 `443`이고, 아래 Nginx 설정은 `80`과 `443`을 함께 listen한다.
-- Docker Engine, Java 21 runtime, Python 3, Nginx, Certbot 설치
+- Docker Engine, Java 21 runtime, Python 3, Node.js 24, Nginx, Certbot 설치
 - Docker를 실행하는 전용 `coditto` Linux 계정. 이 계정을 `docker` group에 넣는 것은 root 권한에 준하는 접근을 준다는 것을 이해해야 한다.
 
 Judge 하나가 CPU 2개와 768 MiB를 사용한다. 현재 Backend에는 전역 대기열이나 동시 실행 제한이 없으므로 작은 서버에서 공개 제출을 켜면 자원 고갈을 막을 수 없다. Nginx의 IP별 제한은 첫 방어선일 뿐 충분한 운영 제어가 아니다.
@@ -64,6 +64,15 @@ npm run build
 `git clone`은 umask에 따라 world-readable 트리를 만들 수 있다. 릴리스 트리에는 `judge-only/` 공식 test가 들어 있으므로 `0750`으로 맞춰 서비스 계정과 Nginx group만 읽게 한다.
 
 Node.js는 Frontend build 단계에만 필요하다. 정적 `frontend/dist`를 Nginx가 직접 제공하므로 런타임 Node 서버는 띄우지 않는다.
+
+Node 버전은 `frontend/.nvmrc`와 `frontend/package.json`의 `engines`가 고정하며 현재 24다. Node 20에서는 `jsdom`이 끌어오는 `undici`가 `worker_threads.markAsUncloneable`을 요구해 `npm test`의 vitest worker가 기동하지 못한다. 빌드는 20에서도 통과하므로 이 증상은 아래 "배포 전 검증"을 조용히 건너뛰게 만든다. 서버 Node를 올릴 때는 NodeSource 저장소를 해당 major로 바꾼 뒤 `nodejs`를 다시 설치한다.
+
+```bash
+sudo sed -i 's|node_20.x|node_24.x|' /etc/apt/sources.list.d/nodesource.sources
+sudo apt-get update
+sudo apt-get install -y --allow-downgrades nodejs
+node -v
+```
 
 Judge 이미지는 제출을 받기 전에 한 번 빌드한다. Runner가 실행 시 `--pull never`를 사용하므로 manifest가 참조하는 이미지가 서버에 없으면 제출은 실패한다.
 
