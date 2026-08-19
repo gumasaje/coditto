@@ -21,12 +21,25 @@ Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정�
 
 - Ubuntu 24.04 LTS 같은 지원 중인 Linux VPS, 최소 2 vCPU / 4 GiB RAM / 40 GiB 디스크
 - SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 도메인 A/AAAA 레코드는 HTTPS 공개 전에 필요하다.
-- `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용
+- 목표 상태는 `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용하는 것이다. 현재 해커톤 서버는 아직 그 상태가 아니다. 아래 "현재 방화벽 상태"를 확인한다.
 - 사업자가 inbound `80/tcp`를 막는 VPS가 있다. 현재 해커톤 서버가 그 경우이므로 공개 진입점은 `443`이고, 아래 Nginx 설정은 `80`과 `443`을 함께 listen한다.
 - Docker Engine, Java 21 runtime, Python 3, Nginx, Certbot 설치
 - Docker를 실행하는 전용 `coditto` Linux 계정. 이 계정을 `docker` group에 넣는 것은 root 권한에 준하는 접근을 준다는 것을 이해해야 한다.
 
-Judge 하나가 CPU 1개와 768 MiB를 사용한다. 현재 Backend에는 전역 대기열이나 동시 실행 제한이 없으므로 작은 서버에서 공개 제출을 켜면 자원 고갈을 막을 수 없다. Nginx의 IP별 제한은 첫 방어선일 뿐 충분한 운영 제어가 아니다.
+Judge 하나가 CPU 2개와 768 MiB를 사용한다. 현재 Backend에는 전역 대기열이나 동시 실행 제한이 없으므로 작은 서버에서 공개 제출을 켜면 자원 고갈을 막을 수 없다. Nginx의 IP별 제한은 첫 방어선일 뿐 충분한 운영 제어가 아니다.
+
+## 현재 방화벽 상태
+
+해커톤 서버에는 아직 호스트 방화벽이 없다. `ufw`는 `inactive`이고 `iptables`의 `INPUT` 정책은 룰 없이 `ACCEPT`다. 외부 노출을 실제로 제한하는 것은 사업자 네트워크 필터뿐이다. 이 상태를 그대로 두기로 한 근거와 남은 위험은 다음과 같다.
+
+- 외부에서 접속되는 포트는 `22`와 `443`뿐이다. `80`과 `8080`은 사업자 구간에서 차단된다.
+- Backend는 loopback에만 bind하므로 API가 방화벽 없이도 직접 노출되지 않는다. 즉 지금 `ufw`를 켜도 실제로 차단되는 트래픽은 없다.
+- 반대로 새 서비스를 wildcard 주소로 띄우면 방화벽이 막아 주지 않는다. 임시 개발 서버나 데이터베이스를 이 서버에서 열지 않는다.
+
+`ufw`를 켤 때는 두 가지를 먼저 이해해야 한다.
+
+- `22`를 허용하기 전에 활성화하면 SSH 접속을 잃는다. 콘솔 접근 수단을 확인하고, 다른 SSH 세션을 열어 둔 채로 적용한다.
+- Docker가 publish한 포트는 `DOCKER-USER`와 `FORWARD` 경로를 타므로 `ufw`의 `INPUT` 규칙을 우회한다. `ufw` 활성화만으로 container 포트가 보호된다고 가정하면 안 된다. 현재 publish된 container 포트는 없다.
 
 ## 최초 설치
 
@@ -155,3 +168,4 @@ release 교체는 기존 경로를 부분 수정하지 말고, 완전한 새 che
 - digest로 고정한 Judge image와 재현 가능한 image publication
 - API 서버와 더 강하게 격리된 Judge 실행 환경 분리
 - production-only 문제팩과 비밀 테스트의 배포 방식
+- 호스트 방화벽 활성화와 `22/tcp`의 관리자 고정 IP 제한
