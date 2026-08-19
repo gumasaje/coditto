@@ -238,6 +238,19 @@ describe('workspace', () => {
     expect(screen.queryByText('src/main/java/com/coditto/demo/RoleService.java', { selector: 'code' })).not.toBeInTheDocument()
   })
 
+  it('stacks the statement above the editor and result slot', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    mockApi()
+    render(<App />)
+    await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
+    const main = screen.getByRole('main')
+    const statement = within(main).getByRole('region', { name: '문제 설명' })
+    const editor = within(main).getByLabelText('src/main/java/com/coditto/demo/RoleService.java')
+    const result = within(main).getByRole('region', { name: '채점 결과' })
+    expect(statement.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(editor.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('moves focus to the workspace main landmark from the skip link', async () => {
     window.location.hash = '#/problems/role-update-001'
     mockApi()
