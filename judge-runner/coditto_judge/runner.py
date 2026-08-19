@@ -222,7 +222,7 @@ def build_docker_command(
         "--user",
         "1000:1000",
         "--cpus",
-        "1.0",
+        "2.0",
         "--memory",
         "768m",
         "--memory-swap",
