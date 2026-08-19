@@ -46,7 +46,7 @@ function ShotEditor({ source, markLine }: { source: string; markLine?: number })
   return (
     <div className="editor-pane">
       <div className="editor-head">
-        <span className="editor-path">{LANDING_PROBLEM.filePath}</span>
+        <span className="editor-path" title={LANDING_PROBLEM.filePath}>{LANDING_PROBLEM.fileName}</span>
         <span className="lang">Java</span>
       </div>
       <div className="editor-body">
