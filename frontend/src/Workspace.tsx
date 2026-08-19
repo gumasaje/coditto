@@ -190,7 +190,12 @@ export function Workspace({ problemId }: { problemId: string }) {
           </nav>
         }
         trailing={
-          <span>{difficultyLabel(problem.difficulty)} · {problem.estimatedMinutes}분</span>
+          <div className="header-actions">
+            {error && <p role="alert" className="danger">{error}</p>}
+            <button type="submit" disabled={isSubmitting} className="submit">
+              {isSubmitting ? '채점 중…' : '제출하기'}
+            </button>
+          </div>
         }
       />
       <main id="main" tabIndex={-1} ref={shellRef} className="workspace-body">
@@ -225,15 +230,6 @@ export function Workspace({ problemId }: { problemId: string }) {
           </div>
         </div>
       </main>
-      <footer className="workspace-footer">
-        <a href="#/problems">문제 목록</a>
-        <div className="footer-actions">
-          {error && <p role="alert" className="danger">{error}</p>}
-          <button type="submit" disabled={isSubmitting} className="submit">
-            {isSubmitting ? '채점 중…' : '제출하기'}
-          </button>
-        </div>
-      </footer>
     </form>
   )
 }
