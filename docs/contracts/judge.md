@@ -54,7 +54,7 @@ problem request 또는 candidate가 이 입력 계약을 위반하면 사용자 
 
 각 실행은 immutable base와 검증된 candidate로 깨끗한 temporary workspace를 만듭니다. official test는 별도 temporary directory에 준비하고 candidate workspace와 각각 read-only mount로 전달합니다. container 안에서는 `/workspace` tmpfs에 candidate project를 복사하며 official test는 `/judge-tests` read-only mount에서 참조합니다.
 
-Judge image는 Gradle 8.10.2 distribution과 demo의 JUnit runtime dependency를 build 단계에서 준비합니다. 실행 시 image의 cache seed를 writable tmpfs로 복사하고 `gradle --offline --no-daemon test`를 한 번 실행합니다. test task가 compile에 의존하므로 통과·실패 경로는 Gradle을 한 번만 기동하며, build가 실패하면서 JUnit XML이 하나도 생성되지 않은 경우에만 compile 전용 실행을 덧붙입니다. host Gradle home, host credential directory, Docker socket은 mount하지 않습니다.
+Judge image는 Gradle 8.10.2 distribution과 demo의 JUnit runtime dependency를 build 단계에서 준비합니다. 실행 시 image의 cache seed를 writable tmpfs로 복사하고 `gradle --offline --no-daemon test`를 한 번 실행합니다. build JVM은 judge 실행 한 번만 살아 있으므로 `-XX:TieredStopAtLevel=1`로 기동합니다. 이 값은 Gradle 자신의 JVM에만 적용되고, candidate 코드를 실행하는 Test task의 fork된 JVM은 기본 JIT을 그대로 사용합니다. test task가 compile에 의존하므로 통과·실패 경로는 Gradle을 한 번만 기동하며, build가 실패하면서 JUnit XML이 하나도 생성되지 않은 경우에만 compile 전용 실행을 덧붙입니다. host Gradle home, host credential directory, Docker socket은 mount하지 않습니다.
 
 Phase A에서 실제 적용하고 검증한 제한은 다음과 같습니다.
 
