@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import io
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -25,6 +26,7 @@ from coditto_judge.runner import (  # noqa: E402
     build_docker_command,
     completed_result,
     completed_test_result,
+    create_container_mount_directories,
     execute,
     load_manifest,
     main,
@@ -103,6 +105,17 @@ class RunnerContractTest(unittest.TestCase):
                 ),
                 suite_sources,
             )
+
+    def test_container_mount_roots_remain_readable_with_restrictive_umask(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            previous_umask = os.umask(0o077)
+            try:
+                workspace, judge_tests = create_container_mount_directories(Path(temporary_dir))
+            finally:
+                os.umask(previous_umask)
+
+            self.assertEqual(workspace.stat().st_mode & 0o777, 0o755)
+            self.assertEqual(judge_tests.stat().st_mode & 0o777, 0o755)
 
     def test_preflight_builds_target_and_regression_source_map(self) -> None:
         self.assertEqual(
