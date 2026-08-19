@@ -247,6 +247,23 @@ def build_docker_command(
     ]
 
 
+def create_container_mount_directories(temporary_dir: Path) -> tuple[Path, Path]:
+    """Create the two bind-mount roots readable by the non-root Judge user.
+
+    The host Runner may run under a restrictive service umask. Docker mounts
+    only these directories into the Judge container, where UID 1000 must be
+    able to traverse their roots. The enclosing temporary directory remains
+    private to the host Runner.
+    """
+    workspace = temporary_dir / "input"
+    judge_tests = temporary_dir / "judge-tests"
+    workspace.mkdir()
+    judge_tests.mkdir()
+    workspace.chmod(0o755)
+    judge_tests.chmod(0o755)
+    return workspace, judge_tests
+
+
 def _remove_container(container_name: str) -> None:
     try:
         subprocess.run(
@@ -391,9 +408,7 @@ def execute(
     container_name = container_name or f"coditto-judge-{uuid.uuid4().hex}"
     try:
         with tempfile.TemporaryDirectory(prefix="coditto-judge-") as temporary_dir:
-            workspace = Path(temporary_dir) / "input"
-            judge_tests = Path(temporary_dir) / "judge-tests"
-            workspace.mkdir()
+            workspace, judge_tests = create_container_mount_directories(Path(temporary_dir))
             suite_sources = preflight_suite_sources(problem_dir)
             assemble_workspace(problem_dir, candidate_dir, workspace)
             assemble_judge_tests(problem_dir, judge_tests, suite_sources)
