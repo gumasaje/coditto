@@ -100,6 +100,8 @@ Issue #1은 로컬 또는 신뢰하는 데모 입력으로 수행한 기술 검�
 - host cache를 mount하지 않은 조건에서 offline Gradle 실행을 확인했고, 모든 종료 경로에서 temporary directory와 Judge container cleanup을 검증했습니다.
 - raw Gradle output은 immutable entrypoint의 합산 1 MiB bounded sink에서 소비하고 host로 전달하지 않습니다. DTD와 entity를 거부하는 trusted parser가 JUnit XML을 읽고 예약 exit code로만 suite 판정을 전달합니다.
 
+판정 지연은 `judge-runner/benchmark_judge.py`로 측정합니다. 이 스크립트는 준비된 candidate를 반복 실행해 p50과 p95를 남기며, core 수와 Docker stack이 다르면 비교가 성립하지 않으므로 배포 host에서 실행한 값만 기준으로 씁니다.
+
 이 값은 현재 Docker Desktop 환경의 Phase A 기술 검증에서 측정한 값입니다. 프로덕션 보안 기준이나 충분한 리소스 정책으로 간주하지 않습니다. 특히 Gradle compile 단계에서 발생한 일부 인프라 오류가 현재 `COMPILE_FAILED`로 분류될 수 있습니다.
 
 ## 안정적인 책임 분리
