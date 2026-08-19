@@ -82,9 +82,8 @@ export function Home() {
               <p className="lp-feature-label">JUDGE</p>
               <h3>제출하면 테스트로 판정</h3>
               <p>
-                판정값은 <span className="lp-mono">TESTS_PASSED</span>,{' '}
-                <span className="lp-mono">TESTS_FAILED</span>,{' '}
-                <span className="lp-mono">COMPILE_FAILED</span>.
+                실행 결과는 컴파일 실패, 테스트 성공, 테스트 실패입니다.
+                실패하면 목표와 회귀 중 어느 쪽이 깨졌는지 붙습니다.
               </p>
             </article>
             <article className="lp-feature">
@@ -104,7 +103,7 @@ export function Home() {
               <path d="M8 9l-3 3 3 3M16 9l3 3-3 3M14 6l-4 12" />
             </HexIcon>
             <h2 id="lp-workspace-title">제출하면 테스트로 판정</h2>
-            <p>판정값이 이 자리에 붙습니다.</p>
+            <p>실행 결과에 컴파일 실패, 테스트 성공, 테스트 실패가 붙습니다.</p>
             <HomeProductShot kind="judge" />
           </div>
         </section>

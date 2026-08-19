@@ -44,7 +44,6 @@ export function InterviewPreview() {
             <span className="crumb-current">{LANDING_PROBLEM.title}</span>
           </nav>
         }
-        trailing={<span>Easy · 15분</span>}
       />
       <main id="main" tabIndex={-1} ref={shellRef} className="workspace-body">
         <div className="pane-left" style={{ width: `${leftWidth}%` }}>
@@ -78,10 +77,6 @@ export function InterviewPreview() {
           </div>
         </div>
       </main>
-      <footer className="workspace-footer">
-        <a href="#/problems">문제 목록</a>
-        <p className="mute">미리보기 · 실제 제출 없이 통과 후 카드를 보여 줍니다</p>
-      </footer>
     </div>
   )
 }

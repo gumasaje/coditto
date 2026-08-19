@@ -1,7 +1,17 @@
 import Editor, { Monaco, OnMount } from '@monaco-editor/react'
-import { useMemo, useRef, useState } from 'react'
+import type { editor } from 'monaco-editor'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { languageFromPath, monacoLanguage } from '../copy'
 import { buildFileTree } from '../fileTree'
+import {
+  applyMissingJavaImports,
+  catalogForFiles,
+  insertJavaImports,
+  isJavaImportNeeded,
+  JavaImportCatalog,
+  shouldAttemptJavaAutoImport,
+  textEditBetween,
+} from '../javaAutoImport'
 import { findJavaImportFoldRange } from '../javaImportFolding'
 import { ProblemFile } from '../types'
 import { FileTreeView } from './FileTreeView'
@@ -10,6 +20,9 @@ import { SplitHandle } from './SplitHandle'
 const THEME = 'coditto'
 
 let javaImportFoldingRegistered = false
+let javaAutoImportRegistered = false
+const javaAutoImportCatalogRef: { current: JavaImportCatalog } = { current: catalogForFiles([]) }
+let javaAutoImportListener: { dispose: () => void } | null = null
 
 function registerJavaImportFolding(monaco: Monaco) {
   if (javaImportFoldingRegistered) return
@@ -25,6 +38,117 @@ function registerJavaImportFolding(monaco: Monaco) {
       }]
     },
   })
+}
+
+function foldJavaImports(instance: editor.IStandaloneCodeEditor) {
+  if (typeof instance.getModel !== 'function' || typeof instance.trigger !== 'function') return
+  const model = instance.getModel()
+  if (!model) return
+  const range = findJavaImportFoldRange(model.getValue())
+  if (!range) return
+  instance.trigger('fold', 'editor.fold', { selectionLines: [range.start - 1] })
+}
+
+function isJavaModel(model: editor.ITextModel, path: string) {
+  if (typeof model.getLanguageId === 'function') return model.getLanguageId() === 'java'
+  return path.endsWith('.java')
+}
+
+function registerJavaAutoImport(monaco: Monaco) {
+  if (javaAutoImportRegistered) return
+  javaAutoImportRegistered = true
+  monaco.languages.registerCompletionItemProvider('java', {
+    provideCompletionItems(model: editor.ITextModel, position: { lineNumber: number; column: number }) {
+      const word = model.getWordUntilPosition(position)
+      const prefix = word.word
+      if (!prefix) return { suggestions: [] }
+      const source = model.getValue()
+      const catalog = javaAutoImportCatalogRef.current
+      const range = {
+        startLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endLineNumber: position.lineNumber,
+        endColumn: word.endColumn,
+      }
+      const lowered = prefix.toLowerCase()
+      const suggestions = []
+      for (const [simpleName, qualifiedName] of catalog) {
+        if (!simpleName.toLowerCase().startsWith(lowered)) continue
+        const importEdit = isJavaImportNeeded(source, qualifiedName)
+          ? textEditBetween(source, insertJavaImports(source, [qualifiedName]))
+          : null
+        suggestions.push({
+          label: simpleName,
+          kind: monaco.languages.CompletionItemKind.Class,
+          detail: qualifiedName,
+          insertText: simpleName,
+          range,
+          sortText: `0_${simpleName}`,
+          additionalTextEdits: importEdit ? [{
+            range: {
+              startLineNumber: importEdit.startLineNumber,
+              startColumn: importEdit.startColumn,
+              endLineNumber: importEdit.endLineNumber,
+              endColumn: importEdit.endColumn,
+            },
+            text: importEdit.text,
+          }] : [],
+        })
+      }
+      return { suggestions }
+    },
+  })
+}
+
+function bindJavaAutoImport(
+  instance: editor.IStandaloneCodeEditor,
+  monaco: Monaco | undefined,
+  locked: { current: boolean },
+  path: { current: string },
+) {
+  javaAutoImportListener?.dispose()
+  javaAutoImportListener = null
+  if (
+    !monaco?.Range
+    || typeof instance.getModel !== 'function'
+    || typeof instance.onDidChangeModelContent !== 'function'
+    || typeof instance.executeEdits !== 'function'
+  ) return
+
+  let applying = false
+  let debounceTimer: number | undefined
+  const sub = instance.onDidChangeModelContent((event) => {
+    if (applying || locked.current || event.isUndoing || event.isRedoing) return
+    const catalog = javaAutoImportCatalogRef.current
+    if (!event.changes.some((change) => shouldAttemptJavaAutoImport(change.text, catalog))) return
+    window.clearTimeout(debounceTimer)
+    debounceTimer = window.setTimeout(() => {
+      const model = instance.getModel()
+      if (!model || locked.current || !isJavaModel(model, path.current)) return
+      const source = model.getValue()
+      const next = applyMissingJavaImports(source, javaAutoImportCatalogRef.current)
+      const edit = textEditBetween(source, next)
+      if (!edit) return
+      applying = true
+      instance.executeEdits('java-auto-import', [{
+        range: new monaco.Range(
+          edit.startLineNumber,
+          edit.startColumn,
+          edit.endLineNumber,
+          edit.endColumn,
+        ),
+        text: edit.text,
+        forceMoveMarkers: true,
+      }])
+      applying = false
+    }, 250)
+  })
+  javaAutoImportListener = {
+    dispose() {
+      window.clearTimeout(debounceTimer)
+      sub.dispose()
+    },
+  }
 }
 
 function applyTheme(monaco: Monaco) {
@@ -54,6 +178,8 @@ function applyTheme(monaco: Monaco) {
       'editorIndentGuide.background': '#2a3d54',
       'editorOverviewRuler.background': '#0d1b2a',
       'editorOverviewRuler.border': '#0d1b2a',
+      focusBorder: '#00000000',
+      contrastBorder: '#00000000',
       'scrollbar.shadow': '#00000000',
       'scrollbarSlider.background': '#415a7799',
       'scrollbarSlider.hoverBackground': '#778da9cc',
@@ -86,8 +212,16 @@ export function EditorPane({
   const tree = useMemo(() => buildFileTree(files), [files])
   const bodyRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<{ focus: () => void } | null>(null)
+  const lockedRef = useRef(false)
+  const pathRef = useRef(activePath)
   const [treeWidth, setTreeWidth] = useState(216)
   const locked = disabled || readOnly
+  lockedRef.current = locked
+  pathRef.current = activePath
+
+  useEffect(() => {
+    javaAutoImportCatalogRef.current = catalogForFiles(files)
+  }, [files])
 
   function dragTree(clientX: number) {
     const rect = bodyRef.current?.getBoundingClientRect()
@@ -95,8 +229,10 @@ export function EditorPane({
     setTreeWidth(Math.min(380, Math.max(132, clientX - rect.left)))
   }
 
-  const bindEditor: OnMount = (editor) => {
-    editorRef.current = editor
+  const bindEditor: OnMount = (instance, monaco) => {
+    editorRef.current = instance
+    window.setTimeout(() => foldJavaImports(instance), 0)
+    bindJavaAutoImport(instance, monaco, lockedRef, pathRef)
   }
 
   return (
@@ -128,6 +264,7 @@ export function EditorPane({
             beforeMount={(monaco) => {
               applyTheme(monaco)
               registerJavaImportFolding(monaco)
+              registerJavaAutoImport(monaco)
             }}
             onMount={bindEditor}
             loading={<p className="editor-loading">에디터를 불러오는 중…</p>}
@@ -153,13 +290,18 @@ export function EditorPane({
                 verticalSliderSize: 8,
                 horizontalSliderSize: 8,
               },
-              quickSuggestions: false,
-              suggestOnTriggerCharacters: false,
-              wordBasedSuggestions: 'off',
+              quickSuggestions: { other: 'on', comments: 'off', strings: 'off' },
+              suggestOnTriggerCharacters: true,
+              wordBasedSuggestions: 'currentDocument',
+              snippetSuggestions: 'inline',
+              suggest: { showIcons: true, preview: false, filterGraceful: true },
+              acceptSuggestionOnEnter: 'on',
+              tabCompletion: 'on',
               renderValidationDecorations: 'off',
               folding: true,
               foldingStrategy: 'auto',
               foldingImportsByDefault: true,
+              showFoldingControls: 'always',
               contextmenu: false,
             }}
             height="100%"

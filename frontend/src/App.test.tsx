@@ -89,8 +89,10 @@ describe('home', () => {
     expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
     expect(screen.getAllByText('src/main/java/com/coditto/demo/RoleService.java').length).toBeGreaterThan(0)
-    expect(screen.getByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+    expect(screen.getByText('테스트 실패 (목표)')).toBeInTheDocument()
+    expect(screen.getAllByText(/실행 결과/).length).toBeGreaterThan(0)
+    expect(screen.queryByText('입력값')).not.toBeInTheDocument()
+    expect(screen.queryByText('기댓값')).not.toBeInTheDocument()
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
@@ -200,8 +202,7 @@ describe('catalog', () => {
     render(<App />)
     expect(await screen.findByLabelText('면접 질문')).toBeInTheDocument()
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
-    expect(screen.getByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+    expect(screen.getByText('테스트 성공')).toBeInTheDocument()
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
     expect(screen.getByText('approved가 false일 때 반환값을 바꾸면 안 되는 이유는 무엇인가요?')).toBeInTheDocument()
     expect(screen.getByText('두 분기가 같은 값을 반환하면 조건문은 어떤 의미가 없나요?')).toBeInTheDocument()
@@ -369,7 +370,6 @@ describe('workspace', () => {
   })
 
   it.each([
-    ['COMPILE_FAILED'],
     ['TIMED_OUT'],
     ['RESOURCE_LIMITED'],
   ])('displays execution %s exactly when suites are omitted', async (execution) => {
@@ -401,9 +401,30 @@ describe('workspace', () => {
     render(<App />)
     await screen.findByRole('button', { name: '제출하기' })
     fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
-    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 실패')).toBeInTheDocument()
+    expect(await screen.findByText('테스트 실패 (회귀)')).toBeInTheDocument()
+    expect(screen.getByText('테스트 실패 (회귀)')).toHaveClass('is-fail')
     expect(screen.getByRole('group', { name: '목표·회귀 테스트' })).toBeInTheDocument()
+    expect(screen.queryByText('TESTS_FAILED')).not.toBeInTheDocument()
+  })
+
+  it('names both failed suites in the execution result', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      return jsonResponse({
+        runStatus: 'COMPLETED',
+        check: {
+          execution: 'TESTS_FAILED',
+          suites: { target: 'TESTS_FAILED', regression: 'TESTS_FAILED' },
+        },
+      })
+    })
+    render(<App />)
+    await screen.findByRole('button', { name: '제출하기' })
+    fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
+    expect(await screen.findByText('테스트 실패 (목표·회귀)')).toBeInTheDocument()
+    expect(screen.getByText('테스트 실패 (목표·회귀)')).toHaveClass('is-fail')
     expect(screen.queryByText('TESTS_FAILED')).not.toBeInTheDocument()
   })
 
@@ -417,7 +438,7 @@ describe('workspace', () => {
     render(<App />)
     await screen.findByRole('button', { name: '제출하기' })
     fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
-    expect(await screen.findByText('COMPILE_FAILED')).toBeInTheDocument()
+    expect(await screen.findByText('컴파일 실패')).toBeInTheDocument()
     expect(screen.queryByRole('group', { name: '목표·회귀 테스트' })).not.toBeInTheDocument()
   })
 
@@ -493,8 +514,7 @@ describe('interview cards', () => {
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
-    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+    expect(await screen.findByText('테스트 성공')).toBeInTheDocument()
     expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
     expect(screen.getByText('기존 권한을 보존하려면 무엇을 확인해야 합니까?')).toBeInTheDocument()
     expect(screen.getByText('null 입력이 안전한 이유를 설명해 보세요.')).toBeInTheDocument()
@@ -509,8 +529,8 @@ describe('interview cards', () => {
   })
 
   it.each([
-    ['TESTS_FAILED', { execution: 'TESTS_FAILED', suites: { target: 'TESTS_FAILED', regression: 'TESTS_PASSED' } }, '목표: 실패'],
-    ['COMPILE_FAILED', { execution: 'COMPILE_FAILED' }, 'COMPILE_FAILED'],
+    ['TESTS_FAILED', { execution: 'TESTS_FAILED', suites: { target: 'TESTS_FAILED', regression: 'TESTS_PASSED' } }, '테스트 실패 (목표)'],
+    ['COMPILE_FAILED', { execution: 'COMPILE_FAILED' }, '컴파일 실패'],
   ] as const)('does not call interview questions after %s', async (_execution, check, visible) => {
     window.location.hash = '#/problems/role-update-001'
     const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
@@ -540,8 +560,7 @@ describe('interview cards', () => {
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
-    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+    expect(await screen.findByText('테스트 성공')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('질문을 만드는 중…')).not.toBeInTheDocument())
     expect(screen.queryByLabelText('면접 질문')).not.toBeInTheDocument()
   })
@@ -562,8 +581,7 @@ describe('interview cards', () => {
     })
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
-    expect(await screen.findByText('목표: 통과')).toBeInTheDocument()
-    expect(screen.getByText('회귀: 통과')).toBeInTheDocument()
+    expect(await screen.findByText('테스트 성공')).toBeInTheDocument()
     expect(screen.queryByText(/네트워크 오류/)).not.toBeInTheDocument()
     expect(await screen.findByText('역할이 생략된 경우를 왜 구분해야 합니까?')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/interview-questions', expect.objectContaining({

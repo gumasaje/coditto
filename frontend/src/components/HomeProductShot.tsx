@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import {
+  LANDING_FAILED_RESULT,
   LANDING_INTERVIEW_QUESTIONS,
-  LANDING_PASSED_RESULT,
   LANDING_PROBLEM,
   ROLE_SERVICE_BUGGY,
   ROLE_SERVICE_FIXED,
@@ -88,7 +88,7 @@ export function HomeProductShot({
     return (
       <div className={className} aria-hidden="true">
         <div className="result-pane">
-          <JudgeResult result={LANDING_PASSED_RESULT} />
+          <JudgeResult result={LANDING_FAILED_RESULT} />
         </div>
       </div>
     )

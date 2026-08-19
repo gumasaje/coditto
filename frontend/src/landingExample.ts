@@ -34,6 +34,18 @@ export const LANDING_PASSED_RESULT = {
   problem: { id: LANDING_PROBLEM.id, version: LANDING_PROBLEM.version },
 }
 
+export const LANDING_FAILED_RESULT = {
+  runStatus: 'COMPLETED' as const,
+  check: {
+    execution: 'TESTS_FAILED' as const,
+    suites: {
+      target: 'TESTS_FAILED' as const,
+      regression: 'TESTS_PASSED' as const,
+    },
+  },
+  problem: { id: LANDING_PROBLEM.id, version: LANDING_PROBLEM.version },
+}
+
 export const ROLE_CHANGE_REQUEST = `package com.coditto.demo;
 
 public record RoleChangeRequest(String currentRole, String requestedRole, boolean approved) {
