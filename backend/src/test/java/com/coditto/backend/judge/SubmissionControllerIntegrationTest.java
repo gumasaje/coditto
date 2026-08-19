@@ -40,6 +40,17 @@ class SubmissionControllerIntegrationTest {
     }
 
     @Test
+    void rejects_an_unsupported_media_type_with_the_contract_shape() throws Exception {
+        mockMvc.perform(post("/api/submissions")
+                        .contentType("text/plain")
+                        .content("source"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.runStatus").value("REJECTED"))
+                .andExpect(jsonPath("$.error.kind").value("INVALID_SUBMISSION"));
+        org.assertj.core.api.Assertions.assertThat(Files.exists(RUNNER_INVOKED)).isFalse();
+    }
+
+    @Test
     void returns_the_normalized_runner_result_for_a_single_source_file() throws Exception {
         mockMvc.perform(post("/api/submissions")
                         .contentType("application/json")
