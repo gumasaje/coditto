@@ -137,8 +137,8 @@ release마다 다음을 실제로 실행한다.
 ```bash
 cd /srv/coditto/current
 python3 -m unittest discover -s judge-runner/tests -v
-python3 judge-runner/verify_spike.py
-python3 judge-runner/verify_pbl_problems.py
+python3 judge-runner/verify_spike.py --skip-image-build
+python3 judge-runner/verify_pbl_problems.py --skip-image-build
 
 cd backend && ./gradlew test
 cd ../frontend && npm test && npm run build
@@ -149,6 +149,8 @@ curl --fail http://<공인-IP>:443/api/problems
 ```
 
 `verify_pbl_problems.py`는 66개의 실제 Judge 실행을 수행하므로 서버 사양이 작으면 오래 걸릴 수 있다. 문제 이미지 또는 Runner 격리 정책이 바뀌었을 때는 생략하지 않는다.
+
+배포 서버에서는 두 검증 스크립트 모두 `--skip-image-build`를 사용한다. 이 옵션이 없으면 스크립트가 Judge image를 같은 tag로 다시 빌드해, 지금 제출을 처리하고 있는 image를 교체한다. 위 설치 절차의 `build-judge-images.sh`가 이미 두 image를 빌드하므로 검증 단계에서 다시 빌드할 이유가 없다. 개발 머신에서 image 빌드 자체를 검증할 때만 옵션 없이 실행한다.
 
 ## 업데이트와 롤백
 
