@@ -52,7 +52,7 @@ export function InterviewPreview() {
             title={LANDING_PROBLEM.title}
             meta="Easy · 15분 · v1"
             statement={'# 역할 변경 승인 버그\n\n테스트가 통과하면 채점 결과 아래에 면접 카드 세 장이 붙습니다. 질문은 제출 diff와 문제 지문으로만 만듭니다.'}
-            editablePaths={['src/main/java/com/coditto/demo/RoleService.java']}
+            editablePaths={[LANDING_PROBLEM.filePath]}
             onOpenFile={() => undefined}
           />
         </div>

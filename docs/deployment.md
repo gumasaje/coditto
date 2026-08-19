@@ -81,6 +81,8 @@ sudo systemctl status coditto-backend
 
 `/etc/coditto/backend.env`의 `CODITTO_PROBLEMS_ROOT_PATH`와 `CODITTO_RUNNER_SCRIPT_PATH`는 반드시 절대 경로여야 한다. `OPENAI_API_KEY`는 선택 사항이며, 없으면 면접 질문 기능만 `UNAVAILABLE`이 되고 Judge는 계속 동작한다.
 
+Windows 로컬에서 `python3` 실행 파일이 없으면 `CODITTO_RUNNER_PYTHON_COMMAND=python`을 지정한다. `coditto.runner.python-command` 기본값은 `python3`이며, OS별로 바꾸지 않고 이 설정값을 그대로 사용한다.
+
 서비스는 candidate 임시 파일을 `/run/coditto`에 만든다. Docker daemon이 그 경로를 bind-mount해서 Judge에 전달해야 하므로 systemd `PrivateTmp=true`를 사용하면 안 된다.
 
 ## 공인 IP 임시 공개
