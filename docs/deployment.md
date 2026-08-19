@@ -4,7 +4,7 @@
 
 이 저장소는 현재 **비공개 베타 또는 신뢰하는 사용자의 데모** 배포만 지원한다. 제출 API는 사용자가 보낸 Java 코드를 Docker로 실행한다. [Judge 계약](contracts/judge.md)은 현재 Docker 제한만으로 공개 임의 코드 실행에 충분한 격리를 주장하지 않으며, 강한 격리와 production resource policy를 TODO로 남긴다.
 
-따라서 이 가이드는 API와 Judge를 같은 **전용 VPS**에 두고, 공개 오픈 전에는 `/api/submissions`를 인증 또는 IP allowlist로 제한하는 운영안을 다룬다. Docker socket을 쓸 수 있는 `coditto` 계정은 사실상 호스트 고권한이므로, 개인 파일·다른 서비스·중요한 비밀값이 있는 서버와 공유하면 안 된다.
+따라서 이 가이드는 API와 Judge를 같은 **전용 VPS**에 두는 해커톤 배포안을 다룬다. Docker socket을 쓸 수 있는 `coditto` 계정은 사실상 호스트 고권한이므로, 개인 파일·다른 서비스·중요한 비밀값이 있는 서버와 공유하면 안 된다.
 
 ## 구성
 
@@ -20,7 +20,7 @@ Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정�
 ## 서버 사전 조건
 
 - Ubuntu 24.04 LTS 같은 지원 중인 Linux VPS, 최소 2 vCPU / 4 GiB RAM / 40 GiB 디스크
-- SSH 키 로그인만 허용하는 sudo 사용자와 도메인 A/AAAA 레코드
+- SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 도메인 A/AAAA 레코드는 HTTPS 공개 전에 필요하다.
 - `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용
 - Docker Engine, Java 21 runtime, Python 3, Nginx, Certbot 설치
 - Docker를 실행하는 전용 `coditto` Linux 계정. 이 계정을 `docker` group에 넣는 것은 root 권한에 준하는 접근을 준다는 것을 이해해야 한다.
@@ -77,19 +77,36 @@ sudo systemctl status coditto-backend
 
 서비스는 candidate 임시 파일을 `/run/coditto`에 만든다. Docker daemon이 그 경로를 bind-mount해서 Judge에 전달해야 하므로 systemd `PrivateTmp=true`를 사용하면 안 된다.
 
-## Nginx와 TLS
+## 공인 IP 임시 공개
+
+도메인이 아직 없을 때는 이 설정으로 `http://<공인-IP>`에 Frontend와 모든 API를 공개할 수 있다. 해커톤 제출 URL은 이 HTTP 주소를 사용한다. 설정은 dedicated VPS의 모든 HTTP host를 받도록 `default_server`와 `server_name _`를 사용한다. 다른 사이트를 같은 VPS에서 운영한다면 이 설정을 그대로 사용하지 말고 별도 virtual host를 구성한다.
+
+`/api/submissions`는 Judge를 실행하는 공개 endpoint다. Nginx는 IP당 분당 5회, burst 2회와 동시 연결 2개로 제한하지만, 이는 운영 기본선일 뿐 사용자별 quota·전역 queue·강한 격리를 대체하지 않는다.
 
 ```bash
-sudo cp /srv/coditto/current/deploy/nginx/coditto.conf /etc/nginx/sites-available/coditto
-sudoedit /etc/nginx/sites-available/coditto  # example.com을 실제 도메인으로 교체
+sudo install -m 0644 /srv/coditto/current/deploy/nginx/coditto.conf \
+  /etc/nginx/sites-available/coditto
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/coditto /etc/nginx/sites-enabled/coditto
 sudo nginx -t
 sudo systemctl reload nginx
 
-sudo certbot --nginx -d example.com -d www.example.com
+curl --fail http://<공인-IP>/api/problems
 ```
 
-`deploy/nginx/coditto.conf`는 `/api/submissions`를 IP당 분당 5회, burst 2회로 제한한다. 베타 참여자가 정해져 있다면 이보다 먼저 Nginx `allow`/`deny` 또는 인증 프록시로 제출 endpoint를 막는다. TLS 적용 후에는 Certbot이 만드는 HTTP -> HTTPS redirect와 certificate 설정을 유지한다.
+## 도메인과 TLS
+
+도메인을 배정받거나 구매한 뒤에는 `deploy/nginx/coditto.conf`를 실제 도메인 virtual host로 바꾼다. `server_name`을 실제 도메인으로 지정하고 `default_server`를 제거한 뒤 Certbot을 실행한다.
+
+```bash
+sudoedit /etc/nginx/sites-available/coditto
+sudo nginx -t
+sudo systemctl reload nginx
+
+sudo certbot --nginx -d example.com
+```
+
+TLS 적용 후에는 Certbot이 만드는 HTTP -> HTTPS redirect와 certificate 설정을 유지한다.
 
 ## 배포 전 검증
 
@@ -106,7 +123,7 @@ cd ../frontend && npm test && npm run build
 cd .. && git diff --check
 
 curl --fail http://127.0.0.1:8080/api/problems
-curl --fail https://example.com/api/problems
+curl --fail http://<공인-IP>/api/problems
 ```
 
 `verify_pbl_problems.py`는 66개의 실제 Judge 실행을 수행하므로 서버 사양이 작으면 오래 걸릴 수 있다. 문제 이미지 또는 Runner 격리 정책이 바뀌었을 때는 생략하지 않는다.
