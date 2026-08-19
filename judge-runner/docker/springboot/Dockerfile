@@ -1,5 +1,7 @@
 FROM gradle:8.10.2-jdk21 AS dependency-cache
 
+USER root
+RUN install -d -o gradle -g gradle /seed-project
 USER gradle
 WORKDIR /seed-project
 COPY --chown=gradle:gradle problems/member-name-uniqueness-001/v1/base/ ./
