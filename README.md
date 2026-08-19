@@ -2,6 +2,10 @@
 
 Coditto는 AI 코딩 도구로 프로젝트를 만드는 개발 취준생과 주니어 개발자가 기존 코드의 버그를 고치고, 테스트로 수정의 안전성을 확인하는 디버깅 훈련 프로젝트입니다. AI의 설명이 아니라 실행한 빌드와 테스트가 판정 근거가 됩니다.
 
+## 공개 데모
+
+`http://1.201.116.237:443`에서 실행 중입니다. 서버의 `80/tcp`가 사업자 구간에서 차단돼 있어 포트를 포함한 주소를 사용하며, 아직 TLS가 없으므로 `https`로는 접속되지 않습니다. 배포 구성과 남은 운영 과제는 [가비아 VPS 첫 배포 가이드](docs/deployment.md)에 있습니다.
+
 ## 목표 학습 흐름
 
 아래 전체 흐름은 아직 완성되지 않았으며, 제품이 목표로 하는 경험입니다.
@@ -57,7 +61,7 @@ judge-runner/testdata/buggy/src/main/java/com/coditto/demo/RoleService.java     
 judge-runner/testdata/compile-error/src/main/java/com/coditto/demo/RoleService.java  → COMPILE_FAILED
 ```
 
-Phase C 실제 상태: Frontend는 문제 목록·카테고리 탭·작업공간에서 `problemId` 기반 제출을 사용하고, Monaco 에디터와 파일 트리·읽기 전용 문맥을 표시하며, `COMPLETED`/`TESTS_PASSED`일 때만 면접 질문 카드를 별도 호출합니다. 제출 결과는 `check.suites`가 있으면 목표/회귀를 나눠 보여 주고, 없으면 `execution`만 표시합니다. Frontend 테스트와 production build가 통과했습니다. 이전 Backend·Runner 관통 검증에서 `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate가 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출·production 배포가 포함되지 않습니다.
+Phase C 실제 상태: Frontend는 문제 목록·카테고리 탭·작업공간에서 `problemId` 기반 제출을 사용하고, Monaco 에디터와 파일 트리·읽기 전용 문맥을 표시하며, `COMPLETED`/`TESTS_PASSED`일 때만 면접 질문 카드를 별도 호출합니다. 제출 결과는 `check.suites`가 있으면 목표/회귀를 나눠 보여 주고, 없으면 `execution`만 표시합니다. Frontend 테스트와 production build가 통과했습니다. 이전 Backend·Runner 관통 검증에서 `buggy`/`fixed`/`compile-error`/`regression-error` 네 candidate가 기대한 `suites`·`execution`과 일치했습니다. 이 단계에는 DB·인증·비동기 제출이 포함되지 않습니다.
 
 ## Phase A 검증
 
