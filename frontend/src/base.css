@@ -1424,10 +1424,6 @@ a {
   }
 }
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 @media (max-width: 860px) {
   :root { --gutter: 24px; }
   .hero-title { font-size: 26px; }

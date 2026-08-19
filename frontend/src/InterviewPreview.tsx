@@ -5,11 +5,7 @@ import { JudgeResult } from './components/JudgeResult'
 import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
-<<<<<<< Updated upstream
 import { LANDING_INTERVIEW_QUESTIONS, LANDING_PASSED_RESULT, LANDING_PROBLEM, ROLE_SERVICE_FIXED } from './landingExample'
-=======
-import { LANDING_INTERVIEW_QUESTIONS, LANDING_PROBLEM, ROLE_SERVICE_FIXED } from './landingExample'
->>>>>>> Stashed changes
 import { catalogHash } from './routes'
 
 export const PREVIEW_QUESTIONS = LANDING_INTERVIEW_QUESTIONS
@@ -56,11 +52,7 @@ export function InterviewPreview() {
             title={LANDING_PROBLEM.title}
             meta="Easy · 15분 · v1"
             statement={'# 역할 변경 승인 버그\n\n테스트가 통과하면 채점 결과 아래에 면접 카드 세 장이 붙습니다. 질문은 제출 diff와 문제 지문으로만 만듭니다.'}
-<<<<<<< Updated upstream
-            editablePaths={['src/main/java/com/coditto/demo/RoleService.java']}
-=======
             editablePaths={[LANDING_PROBLEM.filePath]}
->>>>>>> Stashed changes
             onOpenFile={() => undefined}
           />
         </div>

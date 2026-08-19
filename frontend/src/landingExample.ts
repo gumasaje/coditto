@@ -22,7 +22,6 @@ src/main/java/com/coditto/demo/RoleService.java
 `,
 } as const
 
-<<<<<<< Updated upstream
 export const LANDING_PASSED_RESULT = {
   runStatus: 'COMPLETED' as const,
   check: {
@@ -35,8 +34,6 @@ export const LANDING_PASSED_RESULT = {
   problem: { id: LANDING_PROBLEM.id, version: LANDING_PROBLEM.version },
 }
 
-=======
->>>>>>> Stashed changes
 export const ROLE_CHANGE_REQUEST = `package com.coditto.demo;
 
 public record RoleChangeRequest(String currentRole, String requestedRole, boolean approved) {

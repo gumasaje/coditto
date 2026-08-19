@@ -33,11 +33,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ProblemCatalogService {
-<<<<<<< Updated upstream
-    public static final List<String> CATEGORIES = List.of("Backend");
-=======
     public static final List<String> CATEGORIES = List.of("Backend", "Data·AI");
->>>>>>> Stashed changes
     public static final Pattern PROBLEM_ID_PATTERN = Pattern.compile("[a-z0-9]+(?:-[a-z0-9]+)*");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProblemCatalogService.class);

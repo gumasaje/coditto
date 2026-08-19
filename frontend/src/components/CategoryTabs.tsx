@@ -20,11 +20,7 @@ export function CategoryTabs({
       options={tabs.map((name) => ({ value: name, label: categoryLabel(name) }))}
       selected={selected}
       filled={selected !== ALL_CATEGORY}
-<<<<<<< Updated upstream
       onSelect={(value) => onSelect(value === selected && value !== ALL_CATEGORY ? ALL_CATEGORY : value)}
-=======
-      onSelect={onSelect}
->>>>>>> Stashed changes
     />
   )
 }
