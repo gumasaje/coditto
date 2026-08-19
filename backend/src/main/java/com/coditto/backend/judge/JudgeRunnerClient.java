@@ -104,7 +104,7 @@ public class JudgeRunnerClient {
     private Process startRunner(ResolvedSubmission request, Path candidateDirectory, String containerName)
             throws IOException {
         List<String> command = List.of(
-                properties.resolvedPythonCommand(),
+                properties.pythonCommand(),
                 properties.scriptPath(),
                 "--problem-id", request.problemId(),
                 "--version", Integer.toString(request.version()),

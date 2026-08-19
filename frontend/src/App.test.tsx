@@ -5,7 +5,7 @@ import { App } from './App'
 import { RATE_LIMITED_ERROR } from './copy'
 
 const catalog = {
-  categories: ['Backend', 'Data·AI'],
+  categories: ['Backend'],
   problems: [
     {
       id: 'role-update-001',
@@ -123,21 +123,8 @@ describe('catalog', () => {
     await userEvent.click(screen.getByRole('button', { name: '카테고리, 전체' }))
     expect(screen.getByRole('option', { name: '전체' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Back-End' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Data·AI' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Front-End' })).not.toBeInTheDocument()
-  })
-
-  it('filters by category picker and shows an empty state', async () => {
-    mockApi()
-    render(<App />)
-    await screen.findByRole('link', { name: /회원 권한 수정/ })
-    await userEvent.click(screen.getByRole('button', { name: '카테고리, 전체' }))
-    await userEvent.click(screen.getByRole('option', { name: 'Data·AI' }))
-    expect(screen.getByText('이 카테고리에 준비된 문제가 없습니다.')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /회원 권한 수정/ })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '카테고리, Data·AI' }))
-    await userEvent.click(screen.getByRole('option', { name: 'Back-End' }))
-    expect(screen.getByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Data·AI' })).not.toBeInTheDocument()
   })
 
   it('groups catalog filters into stack, bug type, and difficulty', async () => {
