@@ -1506,6 +1506,16 @@ a {
     padding: 8px 12px;
   }
 
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+  }
+
+  .nav-center {
+    display: none;
+  }
+
   .catalog-filters {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1606,6 +1616,7 @@ a {
     display: none;
   }
 
+  /* 분할 드래그가 result-pane에 inline height를 넣으므로 모바일에서 내용 높이로 되돌리려면 !important가 필요하다. */
   .workspace:not(.lp-shot) .result-pane {
     height: auto !important;
     min-height: 0;
