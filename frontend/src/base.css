@@ -1254,6 +1254,8 @@ a {
 
 .interview-card p {
   margin: 6px 0 0;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .kicker-sm {
@@ -1387,6 +1389,8 @@ a {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .interview-why {
@@ -1681,6 +1685,8 @@ a {
   font-weight: 650;
   letter-spacing: -0.045em;
   line-height: 1.13;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .lp-hero-lead {
@@ -1770,7 +1776,6 @@ a {
 .lp-shot--judge {
   width: min(560px, 100%);
   height: auto;
-  overflow: visible;
   margin: 42px auto 0;
   text-align: left;
 }
@@ -2087,9 +2092,6 @@ a {
   .lp-shot--judge {
     width: 100%;
     max-height: none;
-  }
-  .lp-shot.workspace.lp-shot--judge {
-    overflow: visible;
   }
   .lp-shot--judge .judge { padding: 18px 16px; }
   .lp-shot--judge .judge h2 { font-size: 22px; }
