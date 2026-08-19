@@ -125,7 +125,9 @@ describe('java auto import', () => {
     )
     expect(shouldAttemptJavaAutoImport('ArrayList', catalog)).toBe(true)
     expect(shouldAttemptJavaAutoImport('List<', catalog)).toBe(true)
+    expect(shouldAttemptJavaAutoImport('Set', catalog)).toBe(true)
     expect(shouldAttemptJavaAutoImport('Li', catalog)).toBe(false)
+    expect(shouldAttemptJavaAutoImport('t', catalog)).toBe(false)
   })
 
   it('does not treat ListItem as List', () => {

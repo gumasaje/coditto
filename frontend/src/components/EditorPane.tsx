@@ -1,6 +1,6 @@
 import Editor, { Monaco, OnMount } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { languageFromPath, monacoLanguage } from '../copy'
 import { buildFileTree } from '../fileTree'
 import {
@@ -8,6 +8,7 @@ import {
   catalogForFiles,
   insertJavaImports,
   isJavaImportNeeded,
+  shouldAttemptJavaAutoImport,
   textEditBetween,
 } from '../javaAutoImport'
 import { findJavaImportFoldRange } from '../javaImportFolding'
@@ -19,7 +20,7 @@ const THEME = 'coditto'
 
 let javaImportFoldingRegistered = false
 let javaAutoImportRegistered = false
-let javaAutoImportFiles: ProblemFile[] = []
+const javaAutoImportFilesRef: { current: ProblemFile[] } = { current: [] }
 let javaAutoImportListener: { dispose: () => void } | null = null
 
 function registerJavaImportFolding(monaco: Monaco) {
@@ -61,7 +62,7 @@ function registerJavaAutoImport(monaco: Monaco) {
       const prefix = word.word
       if (!prefix) return { suggestions: [] }
       const source = model.getValue()
-      const catalog = catalogForFiles(javaAutoImportFiles)
+      const catalog = catalogForFiles(javaAutoImportFilesRef.current)
       const range = {
         startLineNumber: position.lineNumber,
         startColumn: word.startColumn,
@@ -117,12 +118,14 @@ function bindJavaAutoImport(
   let debounceTimer: number | undefined
   const sub = instance.onDidChangeModelContent((event) => {
     if (applying || locked.current || event.isUndoing || event.isRedoing) return
+    const catalog = catalogForFiles(javaAutoImportFilesRef.current)
+    if (!event.changes.some((change) => shouldAttemptJavaAutoImport(change.text, catalog))) return
     window.clearTimeout(debounceTimer)
     debounceTimer = window.setTimeout(() => {
       const model = instance.getModel()
       if (!model || locked.current || !isJavaModel(model, path.current)) return
       const source = model.getValue()
-      const next = applyMissingJavaImports(source, catalogForFiles(javaAutoImportFiles))
+      const next = applyMissingJavaImports(source, catalogForFiles(javaAutoImportFilesRef.current))
       const edit = textEditBetween(source, next)
       if (!edit) return
       applying = true
@@ -212,9 +215,12 @@ export function EditorPane({
   const pathRef = useRef(activePath)
   const [treeWidth, setTreeWidth] = useState(216)
   const locked = disabled || readOnly
-  javaAutoImportFiles = files
   lockedRef.current = locked
   pathRef.current = activePath
+
+  useEffect(() => {
+    javaAutoImportFilesRef.current = files
+  }, [files])
 
   function dragTree(clientX: number) {
     const rect = bodyRef.current?.getBoundingClientRect()
