@@ -39,7 +39,7 @@ sudo -u coditto git clone https://github.com/gumasaje/coditto.git /srv/coditto/c
 
 cd /srv/coditto/current/backend
 ./gradlew bootJar
-cp build/libs/backend-0.0.1-SNAPSHOT.jar build/libs/coditto-backend.jar
+cp build/libs/coditto-backend-0.0.1-SNAPSHOT.jar build/libs/coditto-backend.jar
 
 cd ../frontend
 npm ci
