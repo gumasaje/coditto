@@ -5,7 +5,7 @@ import { JudgeResult } from './components/JudgeResult'
 import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
-import { NETWORK_ERROR, categoryLabel, difficultyLabel } from './copy'
+import { NETWORK_ERROR, RATE_LIMITED_ERROR, categoryLabel, difficultyLabel } from './copy'
 import { catalogHash } from './routes'
 import { editableFilePaths } from './editableFiles'
 import { markPassed } from './progress'
@@ -49,6 +49,10 @@ export function Workspace({ problemId }: { problemId: string }) {
     setQuestions([])
     fetch(`/api/problems/${encodeURIComponent(problemId)}`)
       .then(async (response) => {
+        if (response.status === 429) {
+          if (!cancelled) setError(RATE_LIMITED_ERROR)
+          return
+        }
         const body = await response.json() as ProblemDetail & ApiError
         if (cancelled) return
         if (!response.ok || !body.id) {
@@ -115,6 +119,10 @@ export function Workspace({ problemId }: { problemId: string }) {
           source: (files.find((file) => file.editable) ?? files[0])?.content ?? '',
         }),
       })
+      if (response.status === 429) {
+        setError(RATE_LIMITED_ERROR)
+        return
+      }
       const body = await response.json() as JudgeResponse
       setResult(body)
       const editable = problem.files.find((file) => file.editable) ?? problem.files[0]

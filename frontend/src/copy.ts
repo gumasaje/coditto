@@ -1,4 +1,5 @@
 export const NETWORK_ERROR = '네트워크 오류가 발생했습니다. Backend가 실행 중인지 확인해 주세요.'
+export const RATE_LIMITED_ERROR = '제출 요청이 잠시 제한됐습니다. 잠시 후 다시 시도해 주세요.'
 export const ALL_CATEGORY = '전체'
 
 export function difficultyLabel(value: string): string {
