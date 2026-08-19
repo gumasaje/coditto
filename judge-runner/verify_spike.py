@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 import shlex
@@ -109,19 +110,39 @@ def assert_isolated_command(stderr: str, case: str, iteration: int) -> None:
         raise RuntimeError(f"{case} run {iteration} exposed a forbidden host mount")
 
 
-def main() -> int:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Verify the Judge spike against real Docker")
+    parser.add_argument(
+        "--skip-image-build",
+        action="store_true",
+        help=(
+            "Verify against the Judge image already present on the host. Use this on a "
+            "deployment server, where deploy/scripts/build-judge-images.sh already built it "
+            "and rebuilding here would replace the image that is serving submissions."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
     docker_version = run(["docker", "version", "--format", "{{.Server.Version}}"])
     require_success(docker_version, "Docker daemon check")
 
-    build_started = time.perf_counter()
-    build = run(
-        ["docker", "build", "--progress", "plain", "--file", str(DOCKERFILE), "--tag", IMAGE, "."],
-        timeout=900,
-    )
-    build_seconds = time.perf_counter() - build_started
-    require_success(build, "Judge image build")
-    print(build.stdout, file=sys.stderr, end="")
-    print(build.stderr, file=sys.stderr, end="")
+    build_seconds: float | None = None
+    if not args.skip_image_build:
+        build_started = time.perf_counter()
+        # `--progress` is a BuildKit flag. Omitting it keeps this runnable on hosts
+        # that only have the legacy builder, and BuildKit still prints plain output
+        # when stdout is not a terminal.
+        build = run(
+            ["docker", "build", "--file", str(DOCKERFILE), "--tag", IMAGE, "."],
+            timeout=900,
+        )
+        build_seconds = time.perf_counter() - build_started
+        require_success(build, "Judge image build")
+        print(build.stdout, file=sys.stderr, end="")
+        print(build.stderr, file=sys.stderr, end="")
 
     inspect = run(["docker", "image", "inspect", "--format", "{{.Id}} {{.Config.User}}", IMAGE])
     require_success(inspect, "Judge image inspect")
@@ -192,7 +213,8 @@ def main() -> int:
         "dockerServerVersion": docker_version.stdout.strip(),
         "image": IMAGE,
         "imageId": image_id,
-        "imageBuildSeconds": round(build_seconds, 3),
+        "imageBuilt": not args.skip_image_build,
+        "imageBuildSeconds": None if build_seconds is None else round(build_seconds, 3),
         "runtimeNetwork": "none",
         "limits": {
             "cpus": 1.0,

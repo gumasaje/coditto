@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 import re
@@ -258,7 +259,26 @@ def verify_problem(problem_id: str) -> dict[str, Any]:
     return {"problemId": problem_id, "image": image, "imageId": image_id, "cases": cases}
 
 
-def main() -> int:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Verify the published PBL problem pack against the real Judge"
+    )
+    parser.add_argument(
+        "--skip-image-build",
+        action="store_true",
+        help=(
+            "Verify against the Judge images already present on the host. Use this on a "
+            "deployment server, where deploy/scripts/build-judge-images.sh already built "
+            "them and rebuilding here would replace the image that is serving submissions. "
+            "This skips the external-database marker check on Spring Boot build output; the "
+            "static package check and the per-run output checks still run."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
     docker_version = run(["docker", "version", "--format", "{{.Server.Version}}"])
     require_success(docker_version, "Docker daemon check")
     assert_spring_packages_use_only_h2()
@@ -269,24 +289,31 @@ def main() -> int:
 
     spring_manifest = load_manifest(REPOSITORY_ROOT / "problems/member-name-uniqueness-001/v1")
     spring_image = spring_manifest["runtime"]["image"]
-    build_started = time.perf_counter()
-    build = run(
-        [
-            "docker",
-            "build",
-            "--progress",
-            "plain",
-            "--file",
-            str(SPRING_DOCKERFILE),
-            "--tag",
-            spring_image,
-            ".",
-        ],
-        timeout=1200,
-    )
-    require_success(build, "Spring Boot Judge image build")
-    assert_no_external_database_markers(build.stdout + build.stderr, "Spring Boot image build")
-    build_seconds = time.perf_counter() - build_started
+    build_seconds: float | None = None
+    if args.skip_image_build:
+        # Only prove the image is present and non-root; rebuilding it here would
+        # swap the image that is currently serving submissions.
+        inspect_image(spring_image)
+    else:
+        build_started = time.perf_counter()
+        # `--progress` is a BuildKit flag. Omitting it keeps this runnable on hosts
+        # that only have the legacy builder, and BuildKit still prints plain output
+        # when stdout is not a terminal.
+        build = run(
+            [
+                "docker",
+                "build",
+                "--file",
+                str(SPRING_DOCKERFILE),
+                "--tag",
+                spring_image,
+                ".",
+            ],
+            timeout=1200,
+        )
+        require_success(build, "Spring Boot Judge image build")
+        assert_no_external_database_markers(build.stdout + build.stderr, "Spring Boot image build")
+        build_seconds = time.perf_counter() - build_started
 
     summaries = [verify_problem(problem_id) for problem_id in PROBLEMS]
     java_image_id_after, _ = inspect_image(java_image)
@@ -307,7 +334,10 @@ def main() -> int:
                 "javaImageReused": True,
                 "javaImageIdBefore": java_image_id_before,
                 "javaImageIdAfter": java_image_id_after,
-                "springImageBuildSeconds": round(build_seconds, 3),
+                "springImageBuilt": not args.skip_image_build,
+                "springImageBuildSeconds": (
+                    None if build_seconds is None else round(build_seconds, 3)
+                ),
                 "springDatabase": "H2 in-memory",
                 "runtimeNetwork": "none",
                 "problems": summaries,
