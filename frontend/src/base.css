@@ -2001,10 +2001,6 @@ a {
   text-align: left;
 }
 
-.lp-shot.workspace.lp-shot--judge {
-  overflow: visible;
-}
-
 .lp-shot--judge .judge { padding: 22px 24px; }
 .lp-shot--judge .judge h2 { font-size: 28px; }
 .lp-shot--judge .test-row {
@@ -2366,7 +2362,6 @@ a {
   }
   .lp-shot--judge {
     width: 100%;
-    max-height: none;
   }
   .lp-shot--judge .judge { padding: 18px 16px; }
   .lp-shot--judge .judge h2 { font-size: 22px; }
