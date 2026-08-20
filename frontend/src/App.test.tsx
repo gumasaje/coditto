@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
@@ -80,6 +80,7 @@ afterEach(() => {
   window.localStorage.clear()
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('home', () => {
@@ -683,5 +684,139 @@ describe('interview cards', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/interview-questions', expect.objectContaining({
       method: 'POST',
     }))
+  })
+})
+
+describe('workspace tour', () => {
+  beforeEach(() => {
+    window.location.hash = '#/problems/role-update-001'
+  })
+
+  const openTour = () => screen.findByRole('dialog', { name: '작업공간 둘러보기' })
+  const closedTour = () => screen.queryByRole('dialog', { name: '작업공간 둘러보기' })
+
+  it('opens on the first visit and walks the workspace step by step', async () => {
+    mockApi()
+    render(<App />)
+    const tour = await openTour()
+    expect(within(tour).getByRole('heading', { name: '문제 지문' })).toBeInTheDocument()
+    expect(within(tour).getByText('1 / 7')).toBeInTheDocument()
+    expect(within(tour).getByRole('button', { name: '〈 이전' })).toBeDisabled()
+
+    await userEvent.click(within(tour).getByRole('button', { name: '다음 〉' }))
+    expect(await screen.findByRole('heading', { name: '수정 가능 파일' })).toBeInTheDocument()
+    expect(screen.getByText('2 / 7')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: '〈 이전' }))
+    expect(await screen.findByRole('heading', { name: '문제 지문' })).toBeInTheDocument()
+  })
+
+  it('does not open again once it has been closed', async () => {
+    mockApi()
+    render(<App />)
+    const tour = await openTour()
+    await userEvent.click(within(tour).getByRole('button', { name: '둘러보기 닫기' }))
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
+
+    cleanup()
+    render(<App />)
+    await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
+    expect(closedTour()).not.toBeInTheDocument()
+  })
+
+  it('runs again from the header control after it was closed', async () => {
+    mockApi()
+    render(<App />)
+    await userEvent.click(within(await openTour()).getByRole('button', { name: '다음 〉' }))
+    await userEvent.click(screen.getByRole('button', { name: '둘러보기 닫기' }))
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: '둘러보기' }))
+    const reopened = await openTour()
+    expect(within(reopened).getByRole('heading', { name: '문제 지문' })).toBeInTheDocument()
+    expect(within(reopened).getByText('1 / 7')).toBeInTheDocument()
+  })
+
+  it('closes on Escape and returns focus to the control that started it', async () => {
+    mockApi()
+    render(<App />)
+    await userEvent.click(within(await openTour()).getByRole('button', { name: '둘러보기 닫기' }))
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
+
+    const restart = screen.getByRole('button', { name: '둘러보기' })
+    await userEvent.click(restart)
+    await openTour()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
+    expect(restart).toHaveFocus()
+  })
+
+  it('leaves the editor and the submit button usable while it is open', async () => {
+    mockApi()
+    render(<App />)
+    await openTour()
+    const editor = screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')
+    fireEvent.change(editor, { target: { value: 'class RoleService { void fixed() {} }' } })
+    expect(editor).toHaveValue('class RoleService { void fixed() {} }')
+    expect(screen.getByRole('button', { name: '제출하기' })).toBeEnabled()
+  })
+
+  it('does not pull focus away from a control the reader used before it opened', async () => {
+    mockApi()
+    render(<App />)
+    const path = 'src/main/java/com/coditto/demo/RoleService.java'
+    const editor = await screen.findByLabelText(path)
+    await userEvent.click(screen.getByRole('button', { name: path }))
+    expect(editor).toHaveFocus()
+    expect(await openTour()).toBeInTheDocument()
+    expect(editor).toHaveFocus()
+  })
+
+  it('re-measures the highlight when the target is resized by a splitter drag', async () => {
+    const observed: Element[] = []
+    let notify = () => {}
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: () => void) {
+        notify = callback
+      }
+      observe(element: Element) {
+        observed.push(element)
+      }
+      disconnect() {}
+    })
+    let width = 300
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(() => ({
+      left: 0, top: 64, width, height: 200, right: width, bottom: 264, x: 0, y: 64,
+      toJSON: () => ({}),
+    }) as DOMRect)
+
+    mockApi()
+    render(<App />)
+    await openTour()
+    expect(observed).toContain(document.querySelector('.pane-left'))
+    expect(document.querySelector('.tour-spot')).toHaveStyle({ width: '312px' })
+
+    width = 620
+    act(() => notify())
+    expect(document.querySelector('.tour-spot')).toHaveStyle({ width: '632px' })
+  })
+
+  it('opens even when the seen flag cannot be read from storage', async () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    mockApi()
+    render(<App />)
+    expect(await openTour()).toBeInTheDocument()
+  })
+
+  it('still closes when the seen flag cannot be written to storage', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    mockApi()
+    render(<App />)
+    await userEvent.click(within(await openTour()).getByRole('button', { name: '둘러보기 닫기' }))
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
   })
 })
