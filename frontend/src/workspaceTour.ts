@@ -2,7 +2,6 @@ export type TourSide = 'right' | 'left' | 'above' | 'below' | 'center' | 'cover'
 
 export type TourStep = {
   id: string
-  kicker: string
   title: string
   body: string
   /** 가리킬 요소. `null`이면 대상 없이 화면 중앙에 놓는다. */
@@ -28,57 +27,50 @@ const ARROW = 9
 export const WORKSPACE_TOUR_STEPS: TourStep[] = [
   {
     id: 'statement',
-    kicker: 'STATEMENT',
     title: '문제 지문',
-    body: '증상과 재현 절차가 이 패널에 있습니다. 무엇을 고쳐야 하는지는 지문이 모두 알려 줍니다.',
+    body: '해결해야 할 기능과 수정 조건을 설명합니다. 내용을 잘 읽고 요구사항에 맞게 코드를 수정하세요.',
     target: '.pane-left',
     side: 'right',
   },
   {
     id: 'editable-files',
-    kicker: 'EDITABLE',
     title: '수정 가능 파일',
-    body: '제출에 반영되는 파일입니다. 배지를 누르면 에디터에서 바로 열립니다.',
+    body: '제출에 반영되는 파일입니다. 배지를 눌러 에디터에서 열 수 있습니다.',
     target: '.editable-files',
     side: 'right',
   },
   {
     id: 'file-tree',
-    kicker: 'FILES',
     title: '파일 트리',
-    body: '문제에 포함된 파일 전체입니다. 읽기 전용 파일은 고칠 수 없고 문맥 확인용입니다.',
+    body: '문제에 포함된 전체 파일 구조입니다. 읽기 전용 파일은 수정할 수 없지만, 문제를 이해하는 데 참고할 수 있습니다.',
     target: '.file-tree-pane',
     side: 'right',
   },
   {
     id: 'editor',
-    kicker: 'EDITOR',
     title: '코드 에디터',
-    body: '수정 가능 파일만 편집할 수 있습니다. 자동 완성과 import 정리를 지원합니다.',
+    body: '수정 가능 파일을 편집하는 공간입니다. 자동 완성 등 편집 기능을 활용해 코드를 작성하세요.',
     target: '.editor-monaco',
     side: 'left',
   },
   {
     id: 'submit',
-    kicker: 'SUBMIT',
     title: '제출',
-    body: '고친 코드를 제출하면 목표 테스트와 회귀 테스트가 함께 실행됩니다.',
+    body: '수정한 코드를 제출하는 버튼입니다. 작업을 마친 뒤 눌러 결과를 확인하세요.',
     target: '.header-actions',
     side: 'below',
   },
   {
     id: 'judge',
-    kicker: 'JUDGE',
     title: '채점 결과',
-    body: '컴파일 여부와 목표·회귀 테스트 결과를 여기에서 확인합니다.',
+    body: '컴파일 성공 여부와 테스트 결과가 표시됩니다. 실패했다면 목표(새로 구현한 기능)와 회귀(기존 기능) 중 어느 쪽이 실패했는지 확인하세요.',
     target: '.result-pane',
     side: 'above',
   },
   {
     id: 'interview',
-    kicker: 'INTERVIEW',
     title: '면접 질문',
-    body: '테스트를 모두 통과하면 채점 결과 아래에 면접 질문 카드가 붙습니다. 이 안내는 헤더의 둘러보기로 다시 볼 수 있습니다.',
+    body: '모든 테스트를 통과하면 채점 결과 아래에 질문 카드가 표시됩니다. 이 안내를 다시 보고 싶다면 헤더의 둘러보기를 눌러주세요.',
     target: null,
     side: 'center',
   },

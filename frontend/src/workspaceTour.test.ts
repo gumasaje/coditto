@@ -22,9 +22,9 @@ afterEach(() => {
 
 describe('visibleTourSteps', () => {
   const steps: TourStep[] = [
-    { id: 'a', kicker: 'A', title: 'A', body: 'a', target: '.a', side: 'right' },
-    { id: 'b', kicker: 'B', title: 'B', body: 'b', target: '.b', side: 'right' },
-    { id: 'c', kicker: 'C', title: 'C', body: 'c', target: null, side: 'center' },
+    { id: 'a', title: 'A', body: 'a', target: '.a', side: 'right' },
+    { id: 'b', title: 'B', body: 'b', target: '.b', side: 'right' },
+    { id: 'c', title: 'C', body: 'c', target: null, side: 'center' },
   ]
 
   it('drops a step whose target is hidden on the current layout', () => {

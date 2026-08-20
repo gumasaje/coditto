@@ -25,7 +25,7 @@ export function StatementPane({
   return (
     <section aria-label="문제 설명" className="statement">
       <div className="statement-head">
-        <p className="kicker-sm">INCIDENT</p>
+        <p className="kicker-sm">문제</p>
         <h1>{title}</h1>
         <p className="meta">{meta}</p>
         {onOpenFile ? <EditableFileBadges paths={editablePaths} onOpen={onOpenFile} /> : null}
