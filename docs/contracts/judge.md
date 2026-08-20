@@ -64,7 +64,7 @@ Phase A에서 실제 적용하고 검증한 제한은 다음과 같습니다.
 | 실행 사용자 | non-root `1000:1000` |
 | 루트 filesystem | `--read-only` |
 | capability | `--cap-drop ALL`, `no-new-privileges` |
-| CPU | 1 |
+| CPU | 2 |
 | 메모리 / `memory-swap` | 768 MiB / 768 MiB(총 상한, 추가 swap 없음) |
 | PID | 128 |
 | 열린 파일 수 | `nofile=1024:1024` |
