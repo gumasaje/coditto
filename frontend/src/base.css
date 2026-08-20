@@ -1463,8 +1463,9 @@ a {
 /* ---------- workspace onboarding tour ---------- */
 
 /*
- * 덮개와 강조는 포인터를 받지 않는다. 말풍선만 auto라 투어가 열려 있어도
- * 스플리터 드래그와 에디터 입력이 그대로 동작한다.
+ * 덮개와 강조는 포인터를 받지 않는다. 말풍선도 상자 전체는 받지 않는다.
+ * 말풍선은 대상 옆에 놓이므로 스플리터나 에디터 위에 겹칠 수 있고, 상자가
+ * 포인터를 가로채면 그 아래 조작이 막힌다. 실제로 눌러야 하는 버튼만 auto다.
  */
 .tour {
   position: fixed;
@@ -1497,6 +1498,13 @@ a {
   border: 1px solid #2a3d54;
   background: var(--prussian-blue);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.tour-close,
+.tour-skip,
+.tour-prev,
+.tour-next {
   pointer-events: auto;
 }
 

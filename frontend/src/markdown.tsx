@@ -9,6 +9,11 @@ function inline(text: string): ReactNode[] {
   })
 }
 
+/** 문단 하나 분량의 인라인 마크다운. 지금은 백틱 코드만 다룬다. */
+export function InlineMarkdown({ source }: { source: string }) {
+  return <>{inline(source)}</>
+}
+
 export function StatementMarkdown({ source }: { source: string }) {
   const nodes: ReactNode[] = []
   const lines = source.replace(/\r\n/g, '\n').split('\n')
