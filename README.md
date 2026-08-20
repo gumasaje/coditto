@@ -1,6 +1,15 @@
-# Coditto
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/coditto-symbol-dark.svg">
+    <img src="docs/assets/coditto-symbol.svg" alt="Coditto" width="96">
+  </picture>
+</p>
 
-Coditto는 기존 코드를 읽고, 버그를 수정하고, 테스트로 수정이 기존 동작을 깨뜨리지 않았는지 검증하는 디버깅 훈련 서비스입니다.
+<h1 align="center">Coditto</h1>
+
+<p align="center">
+  기존 코드를 읽고, 버그를 수정하고, 테스트로 수정이 기존 동작을 깨뜨리지 않았는지 검증하는 디버깅 훈련 서비스
+</p>
 
 **AI가 정답을 판정하지 않습니다.** 제출한 코드는 격리된 환경에서 실제로 빌드되고, 공식 테스트의 실행 결과로 판정됩니다.
 
