@@ -683,6 +683,33 @@ describe('interview cards', () => {
     }))
   })
 
+  it('renders backtick spans in generated questions as code', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') return jsonResponse(detail)
+      if (url === '/api/submissions' && init?.method === 'POST') return jsonResponse(passedSubmission)
+      if (url === '/api/interview-questions' && init?.method === 'POST') {
+        return jsonResponse({
+          status: 'GENERATED',
+          questions: [
+            { question: '`approved()` 는 무엇을 확인하나요?', rationale: '`currentRole()` 반환이 왜 문제인지 확인합니다.' },
+            generatedQuestions.questions[1],
+            generatedQuestions.questions[2],
+          ],
+        })
+      }
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: '제출하기' }))
+    const question = await screen.findByText(/는 무엇을 확인하나요\?/)
+    expect(question).toHaveTextContent('approved() 는 무엇을 확인하나요?')
+    expect(question.querySelector('code')).toHaveTextContent('approved()')
+    expect(screen.getByText(/반환이 왜 문제인지/).querySelector('code')).toHaveTextContent('currentRole()')
+    expect(screen.queryByText(/`/)).not.toBeInTheDocument()
+  })
+
   it.each([
     ['TESTS_FAILED', { execution: 'TESTS_FAILED', suites: { target: 'TESTS_FAILED', regression: 'TESTS_PASSED' } }, '테스트 실패 (목표)'],
     ['COMPILE_FAILED', { execution: 'COMPILE_FAILED' }, '컴파일 실패'],

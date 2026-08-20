@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '../markdown'
 import { InterviewQuestion } from '../types'
 
 /**
@@ -22,8 +23,8 @@ export function InterviewCards({
           {questions.map((item, index) => (
             <li key={item.question} className="interview-card">
               <p className="interview-num">{String(index + 1).padStart(2, '0')}</p>
-              <p className="interview-q">{item.question}</p>
-              <p className="interview-why">{item.rationale}</p>
+              <p className="interview-q"><InlineMarkdown source={item.question} /></p>
+              <p className="interview-why"><InlineMarkdown source={item.rationale} /></p>
             </li>
           ))}
         </ol>

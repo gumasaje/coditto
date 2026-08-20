@@ -3,6 +3,7 @@ import {
   TourStep,
   WORKSPACE_TOUR_STEPS,
   placeTourBubble,
+  remapTourIndex,
   visibleTourSteps,
 } from './workspaceTour'
 
@@ -85,5 +86,30 @@ describe('placeTourBubble', () => {
     const target = { left: 0, top: 700, width: 358, height: 20 }
     const placement = placeTourBubble(target, 'right', bubble, viewport)
     expect(placement.top).toBeGreaterThanOrEqual(viewport.safeTop)
+  })
+})
+
+describe('remapTourIndex', () => {
+  const steps = (...ids: string[]): TourStep[] => ids.map((id) => ({
+    id, title: id, body: id, target: `.${id}`, side: 'right',
+  }))
+
+  it('keeps the step the reader is on when it stays visible', () => {
+    const previous = steps('statement', 'file-tree', 'editor')
+    expect(remapTourIndex(previous, 2, steps('statement', 'editor'))).toBe(1)
+  })
+
+  it('falls back to the nearest earlier step when the current one disappears', () => {
+    const previous = steps('statement', 'editable-files', 'file-tree', 'editor')
+    const next = steps('statement', 'editable-files', 'editor')
+    expect(remapTourIndex(previous, 2, next)).toBe(1)
+  })
+
+  it('returns the first step when nothing before the current one survives', () => {
+    expect(remapTourIndex(steps('file-tree'), 0, steps('statement', 'editor'))).toBe(0)
+  })
+
+  it('handles an empty previous list', () => {
+    expect(remapTourIndex([], 0, steps('statement'))).toBe(0)
   })
 })

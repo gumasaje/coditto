@@ -5,6 +5,7 @@ import {
   SPOTLIGHT_PAD,
   TourStep,
   placeTourBubble,
+  remapTourIndex,
   visibleTourSteps,
 } from '../workspaceTour'
 
@@ -24,8 +25,9 @@ function boxOf(element: Element): Box {
 /**
  * 첫 진입 안내. 대상 요소를 도려낸 덮개 위에 단계별 말풍선을 띄운다.
  *
- * 덮개와 강조 영역은 `pointer-events: none`이라 스플리터 드래그와 에디터 입력을
- * 가로채지 않는다. 대신 Tab은 말풍선 안에서 순환시켜 포커스만 붙잡는다.
+ * 덮개와 강조 영역, 말풍선 상자까지 `pointer-events: none`이라 스플리터 드래그와
+ * 에디터 입력을 가로채지 않는다. 말풍선에서 포인터를 받는 것은 버튼뿐이다.
+ * 대신 Tab은 말풍선 안에서 순환시켜 포커스만 붙잡는다.
  */
 export function WorkspaceTour({ open, onClose }: { open: boolean; onClose: () => void }) {
   const bubbleRef = useRef<HTMLDivElement>(null)
@@ -34,6 +36,10 @@ export function WorkspaceTour({ open, onClose }: { open: boolean; onClose: () =>
   const [index, setIndex] = useState(0)
   const [spot, setSpot] = useState<Box | null>(null)
   const [placement, setPlacement] = useState<Placement | null>(null)
+  const stepsRef = useRef<TourStep[]>([])
+  const indexRef = useRef(0)
+  stepsRef.current = steps
+  indexRef.current = index
 
   const close = useCallback(() => {
     const restore = restoreRef.current
@@ -53,6 +59,23 @@ export function WorkspaceTour({ open, onClose }: { open: boolean; onClose: () =>
     restoreRef.current = active instanceof HTMLElement && active !== document.body ? active : null
     setSteps(visibleTourSteps(document))
     setIndex(0)
+  }, [open])
+
+  /*
+   * 표시되는 단계는 뷰포트에 따라 달라진다. 파일 트리는 860px 이하에서 숨겨지므로
+   * 창을 줄이거나 기기를 돌리면 없는 대상을 가리키게 된다. 크기가 바뀌면 다시 추린다.
+   */
+  useEffect(() => {
+    if (!open) return
+    const sync = () => {
+      const next = visibleTourSteps(document)
+      const previous = stepsRef.current
+      if (next.length === previous.length && next.every((item, at) => item.id === previous[at].id)) return
+      setIndex(remapTourIndex(previous, indexRef.current, next))
+      setSteps(next)
+    }
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
   }, [open])
 
   const step: TourStep | undefined = steps[index]

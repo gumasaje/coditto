@@ -93,6 +93,19 @@ export function visibleTourSteps(root: ParentNode, steps: TourStep[] = WORKSPACE
   return steps.filter((step) => step.target === null || isTourTargetVisible(root.querySelector(step.target)))
 }
 
+/**
+ * 표시되는 단계 목록이 바뀌었을 때 볼 단계를 고른다.
+ * 보고 있던 단계가 남아 있으면 그대로 따라가고, 사라졌으면 그 앞의 가장 가까운 남은 단계로 물러난다.
+ * 뷰포트가 좁아져 파일 트리 단계가 사라지는 경우가 여기에 해당한다.
+ */
+export function remapTourIndex(previous: TourStep[], index: number, next: TourStep[]): number {
+  for (let at = Math.min(index, previous.length - 1); at >= 0; at -= 1) {
+    const found = next.findIndex((step) => step.id === previous[at].id)
+    if (found >= 0) return found
+  }
+  return 0
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
