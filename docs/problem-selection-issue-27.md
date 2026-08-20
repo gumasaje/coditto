@@ -68,6 +68,8 @@ Spring Data JPA와 H2 in-memory만 사용합니다.
   candidate와 바이트 단위로 일치하는지 확인했습니다.
 - `python3 -m unittest discover -s judge-runner/tests -v`의 Runner 단위 테스트 28개와
   `(cd backend && ./gradlew test)`를 통과했습니다.
+- `role-update-001`은 Judge 관통 검증용 데모 fixture라 `verify_spike.py`가 담당하고 PBL
+  검증 대상에서는 제외합니다. 게시 문제는 12개, PBL 검증 대상은 11개입니다.
 - `python3 -B judge-runner/verify_pbl_problems.py`로 공개 PBL 문제 11개의 buggy/fixed를
   각각 3회, 총 66회 실행했습니다. 모든 buggy는 `TESTS_FAILED`이면서 target 실패·
   regression 통과, 모든 fixed는 `TESTS_PASSED`이면서 두 suite 통과로 반복 JSON이
