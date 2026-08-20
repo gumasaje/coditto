@@ -140,8 +140,10 @@ Judge 실검증과 판정 소요 시간 측정 절차는 [Judge 검증 절차](d
 ## Documentation
 
 - [기술 아키텍처](docs/ARCHITECTURE.md)
+- [Backend API 계약](docs/contracts/backend-api.md)
 - [Judge 입출력 명세](docs/contracts/judge.md)
 - [Judge 검증 절차](docs/judge-verification.md)
+- [ADR 0001 — 문제별 Judge 이미지](docs/adr/0001-problem-specific-judge-images.md)
 - [가비아 VPS 첫 배포 가이드](docs/deployment.md)
 - [문제 콘텐츠 품질 기준과 재평가 기록](docs/problem-quality-issue-15.md)
 - [Issue #27 PBL 문제 선정 기록](docs/problem-selection-issue-27.md)
