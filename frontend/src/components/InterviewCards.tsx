@@ -14,7 +14,7 @@ export function InterviewCards({
 
   return (
     <section aria-label="면접 질문" className="interview">
-      <p className="kicker-sm">INTERVIEW</p>
+      <p className="kicker-sm">면접 질문</p>
       {status === 'loading' ? (
         <p className="meta">질문을 만드는 중…</p>
       ) : (

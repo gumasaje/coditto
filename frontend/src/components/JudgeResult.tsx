@@ -68,7 +68,7 @@ export function JudgeResult({ result }: { result: JudgeResponse | null }) {
 
   return (
     <section aria-label="채점 결과" className="judge">
-      <p className="kicker-mute">JUDGE RESULT</p>
+      <p className="kicker-mute">채점 결과</p>
       {result ? (
         <div>
           {runStatusText && <h2>{runStatusText}</h2>}

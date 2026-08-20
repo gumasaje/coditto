@@ -1264,7 +1264,7 @@ a {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.02em;
 }
 
 .kicker-mute {
@@ -1273,7 +1273,7 @@ a {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.02em;
 }
 
 .mute { color: var(--mute); }
@@ -1533,7 +1533,8 @@ a {
 .tour-close:hover { color: var(--alabaster-grey); }
 
 .tour-title {
-  margin: 6px 0;
+  margin: 0 0 6px;
+  padding-right: 24px;
   color: #fff;
   font-size: 16px;
   font-weight: 600;

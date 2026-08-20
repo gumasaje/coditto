@@ -162,7 +162,6 @@ export function WorkspaceTour({ open, onClose }: { open: boolean; onClose: () =>
         <button type="button" className="tour-close" aria-label="둘러보기 닫기" onClick={close}>
           <span aria-hidden="true">✕</span>
         </button>
-        <p className="kicker-sm">{step.kicker}</p>
         <h2 className="tour-title">{step.title}</h2>
         <p className="tour-body">{step.body}</p>
         <div className="tour-foot">
