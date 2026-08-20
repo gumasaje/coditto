@@ -4,8 +4,8 @@ import {
   LANDING_INTERVIEW_QUESTIONS,
   LANDING_PROBLEM,
   ROLE_SERVICE_BUGGY,
-  ROLE_SERVICE_FIXED,
 } from '../landingExample'
+import { FileKindIcon } from './FileKindIcon'
 import { InterviewCards } from './InterviewCards'
 import { JudgeResult } from './JudgeResult'
 
@@ -42,6 +42,21 @@ function highlightJava(line: string): ReactNode {
   })
 }
 
+/** 작업공간의 수정 가능 파일 배지를 조작할 수 없는 형태로만 옮긴다. */
+function ShotEditableFiles() {
+  return (
+    <div className="lp-shot-files">
+      <p className="editable-files-label">수정 가능한 파일</p>
+      <div className="editable-files-list">
+        <span className="file-badge">
+          <FileKindIcon name={LANDING_PROBLEM.fileName} />
+          <span>{LANDING_PROBLEM.fileName}</span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function ShotEditor({ source, markLine }: { source: string; markLine?: number }) {
   return (
     <div className="editor-pane">
@@ -63,23 +78,18 @@ function ShotEditor({ source, markLine }: { source: string; markLine?: number })
  */
 export function HomeProductShot({
   kind,
+  showEditableFiles = false,
 }: {
   kind: 'hero' | 'editor' | 'judge' | 'interview'
+  showEditableFiles?: boolean
 }) {
   const className = `workspace lp-shot lp-shot--${kind}`
 
-  if (kind === 'hero') {
+  if (kind === 'hero' || kind === 'editor') {
     return (
       <div className={className} aria-hidden="true">
+        {showEditableFiles ? <ShotEditableFiles /> : null}
         <ShotEditor source={ROLE_SERVICE_BUGGY} markLine={6} />
-      </div>
-    )
-  }
-
-  if (kind === 'editor') {
-    return (
-      <div className={className} aria-hidden="true">
-        <ShotEditor source={ROLE_SERVICE_FIXED} markLine={6} />
       </div>
     )
   }

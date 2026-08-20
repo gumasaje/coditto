@@ -87,17 +87,43 @@ describe('home', () => {
   it('sends the reader from the landing page to the problem catalog', async () => {
     mockApi()
     render(<App />)
-    expect(screen.getByRole('heading', { name: /검증하세요/ })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /고친 이유까지/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '코드를 검증하는 훈련' })).toBeInTheDocument()
     expect(screen.getAllByText('RoleService.java').length).toBeGreaterThan(0)
-    expect(screen.getByText('테스트 실패 (목표)')).toBeInTheDocument()
-    expect(screen.getAllByText(/실행 결과/).length).toBeGreaterThan(0)
     expect(screen.queryByText('입력값')).not.toBeInTheDocument()
     expect(screen.queryByText('기댓값')).not.toBeInTheDocument()
     expect(screen.getByText('승인된 요청에서 currentRole을 반환하면 역할이 왜 바뀌지 않나요?')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('link', { name: '문제 보기 →' }))
+    await userEvent.click(screen.getByRole('link', { name: '문제 풀어보기 →' }))
     expect(await screen.findByRole('link', { name: /회원 권한 수정/ })).toBeInTheDocument()
   })
+
+  it('gives each of the four sections its own subject', () => {
+    mockApi()
+    render(<App />)
+    const sections = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent)
+    expect(sections).toEqual(['작업공간', '채점', '면접 질문'])
+    expect(screen.getAllByText(/수정할 수 있는 파일은 따로 안내되며/).length).toBe(1)
+    expect(screen.getAllByText(/목표 테스트는/).length).toBe(1)
+    expect(screen.getAllByText(/질문 3개/).length).toBe(1)
+  })
+
+  // 샷 안의 INTERVIEW·INCIDENT·JUDGE RESULT는 작업공간 컴포넌트가 소유하므로 여기서 다루지 않는다.
+  it('drops the decorative all-caps labels the landing sections owned', () => {
+    mockApi()
+    render(<App />)
+    for (const label of ['CODE REVIEW, BY DOING', 'CONTEXT', 'JUDGE', 'AFTER JUDGE']) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument()
+    }
+  })
+
+  it('closes with the team signature and the public repository', () => {
+    mockApi()
+    render(<App />)
+    expect(screen.getByText('Built by Tabaco.')).toBeInTheDocument()
+    const repo = screen.getByRole('link', { name: 'GitHub 저장소' })
+    expect(repo).toHaveAttribute('href', 'https://github.com/gumasaje/coditto')
+    expect(repo).toHaveAttribute('rel', 'noreferrer')
+  })
+
 })
 
 describe('catalog', () => {
