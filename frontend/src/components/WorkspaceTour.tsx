@@ -166,7 +166,12 @@ export function WorkspaceTour({ open, onClose }: { open: boolean; onClose: () =>
         <h2 className="tour-title">{step.title}</h2>
         <p className="tour-body">{step.body}</p>
         <div className="tour-foot">
-          <span className="tour-step">{index + 1} / {steps.length}</span>
+          <span className="tour-progress">
+            <span className="tour-step">{index + 1} / {steps.length}</span>
+            {last ? null : (
+              <button type="button" className="tour-skip" onClick={close}>건너뛰기</button>
+            )}
+          </span>
           <span className="tour-nav">
             <button
               type="button"

@@ -1491,7 +1491,7 @@ a {
 
 .tour-bubble {
   position: absolute;
-  width: 300px;
+  width: 320px;
   max-width: calc(100vw - 24px);
   padding: 16px 18px 14px;
   border: 1px solid #2a3d54;
@@ -1535,7 +1535,7 @@ a {
 .tour-title {
   margin: 6px 0;
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -1543,7 +1543,7 @@ a {
 .tour-body {
   margin: 0;
   color: #c9cfd6;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
   overflow-wrap: anywhere;
   word-break: keep-all;
@@ -1557,11 +1557,33 @@ a {
   margin-top: 14px;
 }
 
+.tour-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .tour-step {
   color: var(--dusty-denim);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+
+.tour-skip {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: var(--dusk-blue);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.tour-skip:hover {
+  border-bottom-color: var(--dusty-denim);
+  color: var(--dusty-denim);
 }
 
 .tour-nav {
@@ -1573,7 +1595,7 @@ a {
 .tour-next {
   padding: 5px 12px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 
