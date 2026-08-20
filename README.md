@@ -13,7 +13,7 @@
 
 **AI가 정답을 판정하지 않습니다.** 제출한 코드는 격리된 환경에서 실제로 빌드되고, 공식 테스트의 실행 결과로 판정됩니다.
 
-**[데모 열기](http://1.201.116.237:443)** — 로그인 없이 바로 풀 수 있습니다.
+**[데모 열기](https://coditto.org)** — 로그인 없이 바로 풀 수 있습니다.
 
 ## Motivation
 
@@ -41,7 +41,9 @@ flowchart TD
 
 ## Demo
 
-`http://1.201.116.237:443`에서 실행 중입니다.
+해커톤 제출용 공개 URL은 [https://coditto.org](https://coditto.org)으로 설정한다. Cloudflare Named Tunnel을 연결하면 HTTPS로 제공하며, `cloudflared` 프로세스 또는 VPS가 재시작되어도 같은 호스트 이름으로 다시 연결할 수 있다.
+
+이 서비스는 해커톤 데모용이다. 고정 URL은 제공하지만 다중 인스턴스·가용성 보장·상용 운영을 제공하지 않는다.
 
 **작업공간** — 문제 지문, 선별된 프로젝트 파일 트리, 에디터를 한 화면에서 확인합니다. 수정할 수 있는 파일은 하나이고 나머지는 읽기 전용 문맥입니다.
 
@@ -63,7 +65,9 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    U[Browser] --> N[Nginx :443<br/>plain HTTP demo]
+    U[Browser] --> C[Cloudflare<br/>HTTPS endpoint]
+    C --> T[cloudflared<br/>Named Tunnel]
+    T --> N[Nginx :443<br/>HTTP origin]
     N -->|static assets| F[React + Monaco Frontend]
     N -->|/api/*| B[Spring Boot :8080<br/>loopback only]
     B -->|Python subprocess| R[Python Runner]
@@ -88,11 +92,11 @@ Judge container는 네트워크를 차단하고 non-root·read-only·capability 
 | 판정 소요 시간 | Java p50 약 6초, Spring p50 약 11초 (배포 서버, 정상·오답 각 5회) |
 | 런타임 | Java 21, Gradle 8.10.2, JUnit, H2 |
 
-현재 공개 데모는 무제한 다중 사용자 운영을 전제로 하지 않습니다.
+현재 공개 데모는 무제한 다중 사용자 운영을 전제로 하지 않습니다. 배포 구성에서 브라우저와 Cloudflare 사이에는 `https://coditto.org`의 HTTPS가 적용되고, `cloudflared` Named Tunnel은 Nginx origin에 loopback 평문 HTTP로 연결합니다. 다중 인스턴스·가용성 보장·상용 운영 고도화는 범위 밖입니다.
 
 - 사용자 인증과 서버 측 제출 이력 저장 미지원. 진행 상태는 브라우저에만 남습니다
 - 전역 동시 판정 수 제한과 대기열 미지원
-- TLS 미적용. 공개 주소는 평문 HTTP이고 포트를 포함합니다
+- `coditto.org`은 Cloudflare Named Tunnel에 연결된 제출용 고정 URL이지만, 단일 VPS와 단일 `cloudflared` 인스턴스의 장애 대응은 제공하지 않음
 - 제출 코드 격리는 Docker 기반이며, 공개 임의 코드 실행을 위한 강한 sandbox는 현재 범위에 포함하지 않음
 
 ## Getting Started

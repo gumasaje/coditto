@@ -10,9 +10,10 @@
 
 ```text
 Internet
-  -> Nginx :80, :443 (React static files; 도메인 배정 전에는 둘 다 평문 HTTP)
-       -> /api/* -> Spring Boot :8080 (loopback only)
-                        -> Python Runner -> Docker Judge container
+  -> https://coditto.org (Cloudflare Named Tunnel HTTPS endpoint)
+       -> outbound cloudflared -> Nginx :443 (React static files; HTTP origin)
+            -> /api/* -> Spring Boot :8080 (loopback only)
+                 -> Python Runner -> Docker Judge container
 ```
 
 Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정은 필요 없다. Backend 포트 `8080`과 Docker daemon은 외부 방화벽에 열지 않는다.
@@ -22,10 +23,10 @@ Nginx가 Frontend와 `/api`를 같은 origin으로 제공하므로 CORS 설정�
 이 문서는 대회에서 제공한 가비아 VPS를 기준으로 작성했다. 아래 사양은 우리가 고른 값이 아니라 **현재 서버의 실제 사양**이며, 동시에 Judge 실행에 필요한 하한이기도 하다.
 
 - Ubuntu 24.04 LTS, 2 vCPU / 3.8 GiB RAM / 96 GiB 디스크
-- SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 도메인 A/AAAA 레코드는 HTTPS 공개 전에 필요하다.
+- SSH 키 로그인만 허용하는 sudo 사용자와 공인 IPv4. 제출 URL `coditto.org`은 Cloudflare에 등록한 도메인이며, Named Tunnel public hostname으로 연결한다.
 - 목표 상태는 `80/tcp`, `443/tcp`만 공개하고 `22/tcp`는 관리자의 고정 IP만 허용하는 것이다. 현재 해커톤 서버는 아직 그 상태가 아니다. 아래 "현재 방화벽 상태"를 확인한다.
 - 사업자가 inbound `80/tcp`를 막는 VPS가 있다. 현재 해커톤 서버가 그 경우이므로 공개 진입점은 `443`이고, 아래 Nginx 설정은 `80`과 `443`을 함께 listen한다.
-- Docker Engine, Java 21 runtime, Python 3, Node.js 24, Nginx, Certbot 설치
+- Docker Engine, Java 21 runtime, Python 3, Node.js 24, Nginx, `cloudflared` 설치. Certbot은 커스텀 도메인 TLS를 운영할 때만 필요하다.
 - Docker를 실행하는 전용 `coditto` Linux 계정. 이 계정을 `docker` group에 넣는 것은 root 권한에 준하는 접근을 준다는 것을 이해해야 한다.
 
 Judge 하나가 CPU 2개와 768 MiB를 사용한다. 현재 Backend에는 전역 대기열이나 동시 실행 제한이 없으므로 작은 서버에서 공개 제출을 켜면 자원 고갈을 막을 수 없다. Nginx의 IP별 제한은 첫 방어선일 뿐 충분한 운영 제어가 아니다.
@@ -109,9 +110,9 @@ Windows 로컬에서 `python3` 실행 파일이 없으면 `CODITTO_RUNNER_PYTHON
 
 서비스는 candidate 임시 파일을 `/run/coditto`에 만든다. Docker daemon이 그 경로를 bind-mount해서 Judge에 전달해야 하므로 systemd `PrivateTmp=true`를 사용하면 안 된다.
 
-## 공인 IP 임시 공개
+## Nginx HTTP origin과 공인 IP fallback
 
-도메인이 아직 없을 때는 이 설정으로 공인 IP에 Frontend와 모든 API를 공개할 수 있다. 현재 서버는 inbound `80/tcp`가 닿지 않으므로 **해커톤 제출 URL은 포트를 포함한 `http://<공인-IP>:443`을 사용한다.** 이 `443`은 평문 HTTP이며 TLS가 아니므로 `https://<공인-IP>`는 동작하지 않는다. 설정은 dedicated VPS의 모든 HTTP host를 받도록 `default_server`와 `server_name _`를 사용한다. 다른 사이트를 같은 VPS에서 운영한다면 이 설정을 그대로 사용하지 말고 별도 virtual host를 구성한다.
+이 설정은 Nginx origin을 공인 IP에도 열 수 있게 한다. 현재 서버는 inbound `80/tcp`가 닿지 않으므로 direct fallback은 포트를 포함한 `http://<공인-IP>:443`이다. 이 경로는 평문 HTTP라 `https://<공인-IP>`는 동작하지 않는다. 해커톤 제출 URL은 아래 Named Tunnel의 `https://coditto.org`을 사용한다. 설정은 dedicated VPS의 모든 HTTP host를 받도록 `default_server`와 `server_name _`를 사용한다. 다른 사이트를 같은 VPS에서 운영한다면 이 설정을 그대로 사용하지 말고 별도 virtual host를 구성한다.
 
 `/api/submissions`는 Judge를 실행하는 공개 endpoint다. Nginx는 IP당 분당 5회, burst 2회와 동시 연결 2개로 제한하지만, 이는 운영 기본선일 뿐 사용자별 quota·전역 queue·강한 격리를 대체하지 않는다. 제한을 넘긴 요청은 `429`와 `{"error":{"kind":"RATE_LIMITED"}}`를 받는다.
 
@@ -127,9 +128,48 @@ sudo systemctl restart nginx
 curl --fail http://<공인-IP>:443/api/problems
 ```
 
-## 도메인과 TLS
+## Cloudflare Named Tunnel HTTPS 공개
 
-도메인을 배정받거나 구매한 뒤에는 `deploy/nginx/coditto.conf`를 실제 도메인 virtual host로 바꾼다. `server_name`을 실제 도메인으로 지정하고 `default_server`를 제거한 뒤 Certbot을 실행한다.
+제출 URL을 고정하려면 Cloudflare Named Tunnel을 Nginx origin 앞에 둔다. Browser와 Cloudflare edge 사이의 HTTPS는 Cloudflare가 종료하고, `cloudflared`는 서버에서 outbound connection으로 `http://127.0.0.1:443` Nginx origin에 연결한다. 따라서 inbound `80/tcp`가 열려 있지 않아도 된다.
+
+Cloudflare dashboard에서 **Networking -> Tunnels -> Create a tunnel**을 선택해 `coditto` Named Tunnel을 만든다. Connector 설치 단계에서 Linux용 token을 발급받고, **Public Hostname**을 다음처럼 설정한다.
+
+```text
+Hostname: coditto.org
+Service type: HTTP
+URL: http://127.0.0.1:443
+```
+
+Cloudflare가 `coditto.org` zone을 직접 관리하므로 public hostname 저장 시 필요한 DNS route도 함께 만든다. 별도 A/AAAA 레코드를 만들지 않는다. 터널 token은 secret이므로 저장소·Issue·PR·채팅에 기록하지 않는다.
+
+```bash
+sudo install -d -m 0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+  | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
+  | sudo tee /etc/apt/sources.list.d/cloudflared.list >/dev/null
+sudo apt-get update
+sudo apt-get install -y cloudflared
+
+curl --fail http://127.0.0.1:443/api/problems
+sudo cloudflared service install <TUNNEL_TOKEN>
+sudo systemctl enable --now cloudflared
+sudo systemctl status cloudflared --no-pager
+```
+
+`<TUNNEL_TOKEN>`은 dashboard Connector 설치 단계에서 발급받은 값으로 대체한다. `cloudflared` systemd service는 VPS 재부팅 뒤에도 같은 Named Tunnel로 재연결한다. tunnel 자체를 삭제하거나 public hostname/DNS route를 지우지 않는 한 제출 URL `https://coditto.org`은 바뀌지 않는다.
+
+외부에서 확인한다.
+
+```bash
+curl --fail https://coditto.org/api/problems
+```
+
+Named Tunnel이 연결되지 않으면 VPS에서 `sudo systemctl status cloudflared --no-pager`와 `sudo journalctl -u cloudflared -n 100 --no-pager`로 확인한다. 기존 Quick Tunnel은 Named Tunnel의 외부 확인이 끝난 뒤에만 `pgrep -af 'cloudflared tunnel --url http://127.0.0.1:443'`로 PID를 확인하고 해당 PID만 종료한다. `pkill cloudflared`로 임의 종료하지 않는다.
+
+## Nginx 직접 TLS는 향후 선택 사항
+
+현재 제출 구성은 `coditto.org`과 Cloudflare Named Tunnel이 HTTPS를 종료하므로 Certbot을 실행하지 않는다. 다음 절차는 Cloudflare Tunnel을 제거하고 Nginx가 직접 도메인 TLS를 종료하는 별도 운영 전환 때만 사용한다.
 
 ```bash
 sudoedit /etc/nginx/sites-available/coditto
@@ -157,6 +197,7 @@ cd .. && git diff --check
 
 curl --fail http://127.0.0.1:8080/api/problems
 curl --fail http://<공인-IP>:443/api/problems
+curl --fail https://coditto.org/api/problems
 ```
 
 `verify_pbl_problems.py`는 66개의 실제 Judge 실행을 수행하므로 서버 사양이 작으면 오래 걸릴 수 있다. 문제 이미지 또는 Runner 격리 정책이 바뀌었을 때는 생략하지 않는다.
