@@ -737,6 +737,32 @@ describe('workspace tour', () => {
     expect(within(reopened).getByText('1 / 7')).toBeInTheDocument()
   })
 
+  it('ends the tour from the skip control and keeps it closed afterwards', async () => {
+    mockApi()
+    render(<App />)
+    const tour = await openTour()
+    await userEvent.click(within(tour).getByRole('button', { name: '건너뛰기' }))
+    await waitFor(() => expect(closedTour()).not.toBeInTheDocument())
+
+    cleanup()
+    render(<App />)
+    await screen.findByRole('heading', { name: '역할 변경 승인 버그' })
+    expect(closedTour()).not.toBeInTheDocument()
+  })
+
+  it('drops the skip control on the last step, where finishing is the same action', async () => {
+    mockApi()
+    render(<App />)
+    await openTour()
+    for (let step = 1; step < 7; step += 1) {
+      await userEvent.click(screen.getByRole('button', { name: '다음 〉' }))
+    }
+    const tour = await openTour()
+    expect(within(tour).getByText('7 / 7')).toBeInTheDocument()
+    expect(within(tour).queryByRole('button', { name: '건너뛰기' })).not.toBeInTheDocument()
+    expect(within(tour).getByRole('button', { name: '마치기' })).toBeInTheDocument()
+  })
+
   it('closes on Escape and returns focus to the control that started it', async () => {
     mockApi()
     render(<App />)
