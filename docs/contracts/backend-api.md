@@ -245,7 +245,7 @@ Frontend는 방금 받은 Judge 결과가 `runStatus: "COMPLETED"`이고 `check.
 | 문제 식별 | 확정된 `(problemId, version)`은 게시되어 있고 API의 manifest 인덱스에서 유효해야 한다. | `404` + `{"error":{"kind":"PROBLEM_NOT_FOUND"}}`; 패키지를 읽는 중 선언 계약 위반을 발견하면 `500` + `{"error":{"kind":"CONTENT_ERROR"}}` |
 | `source` | 필수 문자열이며 UTF-8 byte length가 16 KiB 이하이다. 빈 문자열은 문법상 허용하되, 질문 품질을 보장하지 않으므로 유효한 요청 뒤 `UNAVAILABLE`이 될 수 있다. | `400` + `INVALID_INTERVIEW_QUESTION_REQUEST` |
 
-raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. 구현 완료 시 `SubmissionBodyLimitFilter.shouldNotFilter`의 적용 대상은 `POST /api/submissions`와 `POST /api/interview-questions` 두 경로다. `Content-Length`가 상한을 넘거나 streaming body가 읽는 중 상한을 넘으면 filter가 역직렬화 전에 거부한다. 기존 filter 계약과 동일하게 이 경우의 HTTP status는 `400`이고 body는 아래 Judge rejection payload다. 이는 면접 질문 DTO 검증 응답도, `UNAVAILABLE`도 아니다.
+raw JSON body는 `/api/submissions`와 똑같이 최대 128 KiB다. `SubmissionBodyLimitFilter.shouldNotFilter`의 적용 대상은 `POST /api/submissions`와 `POST /api/interview-questions` 두 경로다. `Content-Length`가 상한을 넘거나 streaming body가 읽는 중 상한을 넘으면 filter가 역직렬화 전에 거부한다. 기존 filter 계약과 동일하게 이 경우의 HTTP status는 `400`이고 body는 아래 Judge rejection payload다. 이는 면접 질문 DTO 검증 응답도, `UNAVAILABLE`도 아니다.
 
 ```json
 {
