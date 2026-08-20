@@ -1460,6 +1460,151 @@ a {
 .tok-number { color: #e8a07a; }
 .tok-annotation { color: #c4a574; }
 
+/* ---------- workspace onboarding tour ---------- */
+
+/*
+ * 덮개와 강조는 포인터를 받지 않는다. 말풍선만 auto라 투어가 열려 있어도
+ * 스플리터 드래그와 에디터 입력이 그대로 동작한다.
+ */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.tour-scrim,
+.tour-spot {
+  position: absolute;
+  pointer-events: none;
+}
+
+.tour-scrim {
+  inset: 0;
+  background: rgba(8, 16, 26, 0.62);
+}
+
+.tour-spot {
+  border: 1px solid var(--dusty-denim);
+  box-shadow: 0 0 0 9999px rgba(8, 16, 26, 0.62);
+}
+
+.tour-bubble {
+  position: absolute;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  padding: 16px 18px 14px;
+  border: 1px solid #2a3d54;
+  background: var(--prussian-blue);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.tour-bubble:focus { outline: none; }
+
+.tour-bubble:focus-visible {
+  outline: 2px solid var(--dusty-denim);
+  outline-offset: 2px;
+}
+
+.tour-arrow {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-left: 1px solid #2a3d54;
+  border-bottom: 1px solid #2a3d54;
+  background: var(--prussian-blue);
+  transform: rotate(45deg);
+}
+
+.tour-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--dusty-denim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tour-close:hover { color: var(--alabaster-grey); }
+
+.tour-title {
+  margin: 6px 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.tour-body {
+  margin: 0;
+  color: #c9cfd6;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.tour-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tour-step {
+  color: var(--dusty-denim);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tour-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.tour-prev,
+.tour-next {
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.tour-prev {
+  border: 1px solid var(--dusk-blue);
+  background: transparent;
+  color: #a9b6c4;
+}
+
+.tour-prev:hover:not(:disabled) {
+  border-color: var(--dusty-denim);
+  color: var(--alabaster-grey);
+}
+
+.tour-prev:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tour-next {
+  border: 1px solid var(--alabaster-grey);
+  background: var(--alabaster-grey);
+  color: var(--ink-black);
+  font-weight: 600;
+}
+
+.tour-next:hover {
+  border-color: #fff;
+  background: #fff;
+}
+
 @media (min-width: 860px) {
   .flow-item {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -1614,6 +1759,14 @@ a {
   .file-tree-pane,
   .editor-body > .split-col {
     display: none;
+  }
+
+  /* 좁은 헤더에서 둘러보기 버튼이 제출 버튼을 밀어내지 않게 줄인다. */
+  .workspace:not(.lp-shot) .header-actions { gap: 10px; }
+
+  .tour-bubble {
+    width: min(320px, calc(100vw - 24px));
+    padding: 14px 16px 12px;
   }
 
   /* 분할 드래그가 result-pane에 inline height를 넣으므로 모바일에서 내용 높이로 되돌리려면 !important가 필요하다. */

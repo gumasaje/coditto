@@ -5,10 +5,12 @@ import { JudgeResult } from './components/JudgeResult'
 import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
+import { WorkspaceTour } from './components/WorkspaceTour'
 import { NETWORK_ERROR, RATE_LIMITED_ERROR, categoryLabel, difficultyLabel } from './copy'
 import { catalogHash } from './routes'
 import { editableFilePaths } from './editableFiles'
 import { markPassed } from './progress'
+import { hasSeenWorkspaceTour, markWorkspaceTourSeen } from './tour'
 import {
   ApiError,
   InterviewQuestion,
@@ -35,6 +37,8 @@ export function Workspace({ problemId }: { problemId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [interviewStatus, setInterviewStatus] = useState<InterviewStatus>('idle')
   const [questions, setQuestions] = useState<InterviewQuestion[]>([])
+  const [tourOpen, setTourOpen] = useState(false)
+  const [tourRun, setTourRun] = useState(0)
   const [leftWidth, setLeftWidth] = useState(28)
   const [resultHeight, setResultHeight] = useState(220)
 
@@ -71,6 +75,21 @@ export function Workspace({ problemId }: { problemId: string }) {
       cancelled = true
     }
   }, [problemId])
+
+  useEffect(() => {
+    if (!problem || hasSeenWorkspaceTour()) return
+    setTourOpen(true)
+  }, [problem])
+
+  function closeTour() {
+    markWorkspaceTourSeen()
+    setTourOpen(false)
+  }
+
+  function restartTour() {
+    setTourRun((current) => current + 1)
+    setTourOpen(true)
+  }
 
   async function loadInterview(seq: number, next: ProblemDetail, submittedSource: string) {
     setInterviewStatus('loading')
@@ -192,6 +211,7 @@ export function Workspace({ problemId }: { problemId: string }) {
         trailing={
           <div className="header-actions">
             {error && <p role="alert" className="danger">{error}</p>}
+            <button type="button" className="nav-reset" onClick={restartTour}>둘러보기</button>
             <button type="submit" disabled={isSubmitting} className="submit">
               {isSubmitting ? '채점 중…' : '제출하기'}
             </button>
@@ -231,6 +251,7 @@ export function Workspace({ problemId }: { problemId: string }) {
           </div>
         </div>
       </main>
+      <WorkspaceTour key={tourRun} open={tourOpen} onClose={closeTour} />
     </form>
   )
 }
