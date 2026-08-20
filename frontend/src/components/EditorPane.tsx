@@ -198,10 +198,28 @@ function applyTheme(monaco: Monaco) {
 }
 
 /**
+ * Monaco 모델은 경로 기준 전역 캐시라 문제끼리 같은 경로를 쓰면 이전 문제의 코드가 재사용된다.
+ * 화면에 보이는 경로는 그대로 두고 모델 경로에만 문제 ID를 붙여 캐시를 문제 단위로 가른다.
+ */
+function modelPath(problemId: string, path: string) {
+  return problemId ? `${problemId}/${path}` : path
+}
+
+/** 작업공간을 벗어날 때 이 문제가 만든 모델을 정리한다. 열려 있던 모델은 에디터가 직접 정리한다. */
+function disposeModels(monaco: Monaco | null, paths: string[]) {
+  if (!monaco) return
+  const targets = new Set(paths.map((path) => monaco.Uri.parse(path).toString()))
+  for (const model of monaco.editor.getModels()) {
+    if (!model.isDisposed() && targets.has(model.uri.toString())) model.dispose()
+  }
+}
+
+/**
  * 작업공간 크롬을 유지한 채 Monaco로 소스를 표시한다.
  * 제출 계약은 수정 가능 파일 하나의 source만 사용한다.
  */
 export function EditorPane({
+  problemId,
   files,
   activePath,
   value,
@@ -210,13 +228,14 @@ export function EditorPane({
   onSelectPath,
   onChange,
 }: {
+  problemId: string
   files: ProblemFile[]
   activePath: string
   value: string
   disabled: boolean
   readOnly: boolean
   onSelectPath: (path: string) => void
-  onChange: (value: string) => void
+  onChange: (path: string, value: string) => void
 }) {
   const tree = useMemo(() => buildFileTree(files), [files])
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -226,15 +245,20 @@ export function EditorPane({
   } | null>(null)
   const lockedRef = useRef(false)
   const pathRef = useRef(activePath)
+  const monacoRef = useRef<Monaco | null>(null)
+  const modelPathsRef = useRef<string[]>([])
   const [treeWidth, setTreeWidth] = useState(216)
   const [fontOptions, setFontOptions] = useState(editorFontOptions)
   const locked = disabled || readOnly
   lockedRef.current = locked
   pathRef.current = activePath
+  modelPathsRef.current = files.map((file) => modelPath(problemId, file.path))
 
   useEffect(() => {
     javaAutoImportCatalogRef.current = catalogForFiles(files)
   }, [files])
+
+  useEffect(() => () => disposeModels(monacoRef.current, modelPathsRef.current), [])
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return
@@ -280,13 +304,14 @@ export function EditorPane({
         <div className="editor-monaco">
           <Editor
             theme={THEME}
-            path={activePath}
+            path={modelPath(problemId, activePath)}
             language={monacoLanguage(activePath)}
             value={value}
             onChange={(next) => {
-              if (!locked && next != null) onChange(next)
+              if (!lockedRef.current && next != null) onChange(pathRef.current, next)
             }}
             beforeMount={(monaco) => {
+              monacoRef.current = monaco
               applyTheme(monaco)
               registerJavaImportFolding(monaco)
               registerJavaAutoImport(monaco)

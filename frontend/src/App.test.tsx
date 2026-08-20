@@ -335,6 +335,89 @@ describe('workspace', () => {
     })))
   })
 
+  it('keeps every file on its own source while switching across read-only files', async () => {
+    window.location.hash = '#/problems/role-update-001'
+    const fetchMock = vi.spyOn(window, 'fetch').mockImplementation((input, init) => {
+      const url = String(input)
+      if (url === '/api/problems/role-update-001') {
+        return jsonResponse({
+          ...detail,
+          files: [
+            detail.files[0],
+            {
+              path: 'src/main/java/com/coditto/demo/Member.java',
+              editable: false,
+              content: 'class Member {}',
+            },
+            {
+              path: 'src/main/java/com/coditto/demo/RoleType.java',
+              editable: false,
+              content: 'enum RoleType {}',
+            },
+          ],
+        })
+      }
+      if (url === '/api/submissions' && init?.method === 'POST') return jsonResponse(passedSubmission)
+      if (url === '/api/interview-questions' && init?.method === 'POST') {
+        return jsonResponse({ status: 'UNAVAILABLE', questions: [] })
+      }
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await screen.findByLabelText('src/main/java/com/coditto/demo/RoleService.java')
+    const tree = () => within(screen.getByRole('navigation', { name: '프로젝트 파일' }))
+
+    await userEvent.click(tree().getByRole('button', { name: /Member\.java/ }))
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/Member.java')).toHaveValue('class Member {}')
+    await userEvent.click(tree().getByRole('button', { name: /RoleType\.java/ }))
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleType.java')).toHaveValue('enum RoleType {}')
+    await userEvent.click(tree().getByRole('button', { name: /RoleService\.java/ }))
+
+    expect(screen.getByLabelText('src/main/java/com/coditto/demo/RoleService.java')).toHaveValue('class RoleService {}')
+    await userEvent.click(screen.getByRole('button', { name: '제출하기' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/submissions', expect.objectContaining({
+      body: JSON.stringify({
+        problemId: 'role-update-001',
+        version: 1,
+        source: 'class RoleService {}',
+      }),
+    })))
+  })
+
+  it('does not reuse another problem source for a shared file path', async () => {
+    const shared = 'src/main/java/com/coditto/demo/Member.java'
+    const problem = (id: string, marker: string) => ({
+      ...detail,
+      id,
+      files: [
+        { path: shared, editable: true, content: `class Member { /* ${marker} */ }` },
+        {
+          path: 'src/main/java/com/coditto/demo/RoleService.java',
+          editable: false,
+          content: `class RoleService { /* ${marker} */ }`,
+        },
+      ],
+      candidate: { ...detail.candidate, allowedPaths: [shared] },
+    })
+    window.location.hash = '#/problems/first-problem'
+    vi.spyOn(window, 'fetch').mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/problems/first-problem') return jsonResponse(problem('first-problem', 'FIRST'))
+      if (url === '/api/problems/second-problem') return jsonResponse(problem('second-problem', 'SECOND'))
+      return jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false)
+    })
+    render(<App />)
+    await screen.findByLabelText(shared)
+    expect(screen.getByLabelText(shared)).toHaveValue('class Member { /* FIRST */ }')
+    await userEvent.click(within(screen.getByRole('navigation', { name: '프로젝트 파일' }))
+      .getByRole('button', { name: /RoleService\.java/ }))
+
+    window.location.hash = '#/problems/second-problem'
+    fireEvent(window, new HashChangeEvent('hashchange'))
+
+    await waitFor(() => expect(screen.getByLabelText(shared)).toHaveValue('class Member { /* SECOND */ }'))
+  })
+
   it('displays PROBLEM_NOT_FOUND without remapping', async () => {
     window.location.hash = '#/problems/unknown-problem'
     vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false))
