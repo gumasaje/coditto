@@ -58,6 +58,7 @@ export function InterviewPreview() {
         <SplitHandle axis="x" onDrag={dragX} />
         <div className="editor-col">
           <EditorPane
+            problemId="interview-preview"
             files={[{
               path: 'src/main/java/com/coditto/demo/RoleService.java',
               editable: true,
@@ -68,7 +69,7 @@ export function InterviewPreview() {
             disabled={false}
             readOnly={false}
             onSelectPath={() => undefined}
-            onChange={setSource}
+            onChange={(_path, next) => setSource(next)}
           />
           <SplitHandle axis="y" onDrag={dragY} />
           <div className="result-pane" style={{ height: resultHeight }}>

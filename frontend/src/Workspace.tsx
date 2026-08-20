@@ -211,15 +211,16 @@ export function Workspace({ problemId }: { problemId: string }) {
         <SplitHandle axis="x" onDrag={dragX} />
         <div className="editor-col">
           <EditorPane
+            problemId={problem.id}
             files={files}
             activePath={active?.path ?? editable?.path ?? ''}
             value={active?.content ?? ''}
             disabled={isSubmitting}
             readOnly={active ? !active.editable : true}
             onSelectPath={setActivePath}
-            onChange={(next) => {
+            onChange={(path, next) => {
               setFiles((current) => current.map((file) => (
-                file.path === activePath && file.editable ? { ...file, content: next } : file
+                file.path === path && file.editable ? { ...file, content: next } : file
               )))
             }}
           />
