@@ -124,6 +124,26 @@ describe('home', () => {
     expect(repo).toHaveAttribute('rel', 'noreferrer')
   })
 
+  it('lets the reader fix the demo line and watch the target suite flip', async () => {
+    mockApi()
+    render(<App />)
+    // 강조된 줄은 문법 강조 때문에 span으로 쪼개지므로 텍스트 조회 대신 행 자체를 읽는다.
+    const markedLine = () => document.querySelector('.lp-demo .lp-monaco-row.is-mark')?.textContent ?? ''
+    const fix = screen.getByRole('button', { name: '6번 줄 고치기' })
+    expect(fix).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText('테스트 실패 (목표)')).toBeInTheDocument()
+    expect(markedLine()).toContain('request.currentRole()')
+
+    await userEvent.click(fix)
+    expect(await screen.findByText('테스트 성공')).toBeInTheDocument()
+    expect(markedLine()).toContain('request.requestedRole()')
+    expect(screen.queryByText('테스트 실패 (목표)')).not.toBeInTheDocument()
+
+    const revert = screen.getByRole('button', { name: '6번 줄 되돌리기' })
+    expect(revert).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(revert)
+    expect(await screen.findByText('테스트 실패 (목표)')).toBeInTheDocument()
+  })
 })
 
 describe('catalog', () => {

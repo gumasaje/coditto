@@ -2167,6 +2167,47 @@ a {
   font-size: 14px;
 }
 
+.lp-demo {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  max-width: 560px;
+  margin: 38px auto 0;
+}
+
+.lp-demo .lp-shot--editor,
+.lp-demo .lp-shot--judge {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  transform: none;
+  text-align: left;
+}
+
+.lp-demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--dusk-blue);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--prussian-blue);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.lp-demo-btn:hover {
+  background: var(--dusk-blue);
+  color: var(--alabaster-grey);
+}
+
+.lp-demo-btn:focus-visible {
+  outline: 2px solid var(--prussian-blue);
+  outline-offset: 2px;
+}
+
+.lp-demo-result { width: 100%; }
+
 .lp-interview {
   padding: 20px 0 110px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--dusty-denim) 3%, white), #fff);

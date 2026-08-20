@@ -1,7 +1,13 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { HomeProductShot } from './components/HomeProductShot'
 import { SiteHeader } from './components/SiteHeader'
-import { LANDING_PROBLEM } from './landingExample'
+import {
+  LANDING_FAILED_RESULT,
+  LANDING_PASSED_RESULT,
+  LANDING_PROBLEM,
+  ROLE_SERVICE_BUGGY,
+  ROLE_SERVICE_FIXED,
+} from './landingExample'
 
 /**
  * 팀명 타바코를 그대로 그린 푸터 마크. 불붙은 끝, 몸통, 필터, 연기 두 줄.
@@ -61,6 +67,42 @@ function HexIcon({
     <span className={className} aria-hidden="true">
       <svg viewBox="0 0 24 24">{children}</svg>
     </span>
+  )
+}
+
+/**
+ * 채점 미리보기. 공개 fixture role-update-001의 buggy·fixed 소스와 실제 판정 값만 쓴다.
+ * 승인 분기 한 줄이 목표 suite를 가르고 회귀 suite는 양쪽에서 통과한다는 것을 그대로 보여준다.
+ */
+function JudgeDemo() {
+  const [fixed, setFixed] = useState(false)
+
+  return (
+    <div className="lp-demo">
+      <HomeProductShot
+        kind="editor"
+        source={fixed ? ROLE_SERVICE_FIXED : ROLE_SERVICE_BUGGY}
+        live
+      />
+      <button
+        type="button"
+        className="lp-demo-btn"
+        aria-pressed={fixed}
+        onClick={() => setFixed((value) => !value)}
+      >
+        {fixed ? '6번 줄 되돌리기' : '6번 줄 고치기'}
+      </button>
+      <div className="lp-demo-result">
+        {/* 판정 슬롯은 runStatus를 제목으로 렌더하므로 접근성 트리에서 빼고 결과만 따로 알린다. */}
+        <p className="visually-hidden" aria-live="polite">
+          {fixed ? '채점 결과: 테스트 성공' : '채점 결과: 테스트 실패 (목표)'}
+        </p>
+        <HomeProductShot
+          kind="judge"
+          result={fixed ? LANDING_PASSED_RESULT : LANDING_FAILED_RESULT}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -133,7 +175,7 @@ export function Home() {
               회귀 테스트는 수정 때문에 기존 동작이 깨지지 않았는지 확인합니다. 아래
               예시에서 6번 줄을 고치면 결과가 어떻게 달라지는지 볼 수 있습니다.
             </p>
-            <HomeProductShot kind="judge" />
+            <JudgeDemo />
           </div>
         </section>
 
