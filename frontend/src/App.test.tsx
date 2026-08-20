@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
-import { RATE_LIMITED_ERROR } from './copy'
+import { PROBLEM_NOT_FOUND_ERROR, RATE_LIMITED_ERROR } from './copy'
 
 const catalog = {
   categories: ['Backend'],
@@ -465,11 +465,20 @@ describe('workspace', () => {
     await waitFor(() => expect(screen.getByLabelText(shared)).toHaveValue('class Member { /* SECOND */ }'))
   })
 
-  it('displays PROBLEM_NOT_FOUND without remapping', async () => {
+  it('explains PROBLEM_NOT_FOUND in Korean instead of echoing the contract value', async () => {
     window.location.hash = '#/problems/unknown-problem'
     vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'PROBLEM_NOT_FOUND' } }, false))
     render(<App />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('error.kind: PROBLEM_NOT_FOUND')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(PROBLEM_NOT_FOUND_ERROR)
+    expect(alert).not.toHaveTextContent('PROBLEM_NOT_FOUND')
+  })
+
+  it('keeps an unknown error kind visible as a reportable code', async () => {
+    window.location.hash = '#/problems/unknown-problem'
+    vi.spyOn(window, 'fetch').mockReturnValue(jsonResponse({ error: { kind: 'CONTENT_ERROR' } }, false))
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('문제를 불러오지 못했습니다. (오류 코드 CONTENT_ERROR)')
   })
 
   it('shows a rate-limit notice instead of a judge result when a submission is throttled', async () => {
@@ -513,9 +522,9 @@ describe('workspace', () => {
   })
 
   it.each([
-    ['TIMED_OUT'],
-    ['RESOURCE_LIMITED'],
-  ])('displays execution %s exactly when suites are omitted', async (execution) => {
+    ['TIMED_OUT', '시간 초과'],
+    ['RESOURCE_LIMITED', '자원 한도 초과'],
+  ])('reads execution %s back in Korean instead of the contract value', async (execution, text) => {
     window.location.hash = '#/problems/role-update-001'
     vi.spyOn(window, 'fetch').mockImplementation((input) => {
       const url = String(input)
@@ -525,7 +534,8 @@ describe('workspace', () => {
     render(<App />)
     await screen.findByRole('button', { name: '제출하기' })
     fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
-    expect(await screen.findByText(execution)).toBeInTheDocument()
+    expect(await screen.findByText(text)).toBeInTheDocument()
+    expect(screen.queryByText(execution)).not.toBeInTheDocument()
   })
 
   it('splits target and regression suite results when present', async () => {
@@ -586,9 +596,9 @@ describe('workspace', () => {
   })
 
   it.each([
-    [{ runStatus: 'REJECTED', error: { kind: 'INVALID_SUBMISSION' } }],
-    [{ runStatus: 'SYSTEM_FAILED', error: { kind: 'INFRA_ERROR' } }],
-  ])('displays %s and error.kind without remapping', async (body) => {
+    [{ runStatus: 'REJECTED', error: { kind: 'INVALID_SUBMISSION' } }, '제출이 접수되지 않았습니다'],
+    [{ runStatus: 'SYSTEM_FAILED', error: { kind: 'INFRA_ERROR' } }, '채점을 끝내지 못했습니다'],
+  ])('explains %s in Korean and keeps the error code for reporting', async (body, heading) => {
     window.location.hash = '#/problems/role-update-001'
     vi.spyOn(window, 'fetch').mockImplementation((input) => {
       const url = String(input)
@@ -598,8 +608,10 @@ describe('workspace', () => {
     render(<App />)
     await screen.findByRole('button', { name: '제출하기' })
     fireEvent.submit(screen.getByRole('button', { name: '제출하기' }).closest('form')!)
-    expect(await screen.findByText(body.runStatus)).toBeInTheDocument()
-    expect(screen.getByText(`error.kind: ${body.error.kind}`)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+    expect(screen.getByText(`오류 코드 ${body.error.kind}`)).toBeInTheDocument()
+    expect(screen.queryByText(body.runStatus)).not.toBeInTheDocument()
+    expect(screen.queryByText(`error.kind: ${body.error.kind}`)).not.toBeInTheDocument()
   })
 
   it('shows a network error when submit fails', async () => {

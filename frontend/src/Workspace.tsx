@@ -6,7 +6,7 @@ import { SiteHeader } from './components/SiteHeader'
 import { SplitHandle } from './components/SplitHandle'
 import { StatementPane } from './components/StatementPane'
 import { WorkspaceTour } from './components/WorkspaceTour'
-import { NETWORK_ERROR, RATE_LIMITED_ERROR, categoryLabel, difficultyLabel } from './copy'
+import { NETWORK_ERROR, RATE_LIMITED_ERROR, categoryLabel, difficultyLabel, problemLoadError } from './copy'
 import { catalogHash } from './routes'
 import { editableFilePaths } from './editableFiles'
 import { markPassed } from './progress'
@@ -60,7 +60,7 @@ export function Workspace({ problemId }: { problemId: string }) {
         const body = await response.json() as ProblemDetail & ApiError
         if (cancelled) return
         if (!response.ok || !body.id) {
-          setError(body.error?.kind ? `error.kind: ${body.error.kind}` : '문제를 불러오지 못했습니다.')
+          setError(problemLoadError(body.error?.kind))
           return
         }
         const editable = body.files.find((file) => file.editable) ?? body.files[0]
